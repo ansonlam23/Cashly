@@ -46,6 +46,8 @@ export default function Dashboard() {
   
   const fetchTransactionsAction = useAction(api.plaidActions.fetchTransactionsAction);
   const testPlaidConnection = useAction(api.plaidActions.testPlaidConnectionAction);
+  const addCustomTransactions = useAction(api.plaidActions.addCustomTransactionsAction);
+  const removePlaidItem = useMutation(api.plaidMutations.removePlaidItemFromDb);
   const saveTransactions = useMutation(api.plaidMutations.saveTransactions);
 
   const handleFetchTransactions = async () => {
@@ -119,6 +121,62 @@ export default function Dashboard() {
       console.error('Connection test failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setFetchError(`Connection test failed: ${errorMessage}`);
+    } finally {
+      setIsFetchingTransactions(false);
+    }
+  };
+
+  const handleDisconnectAccount = async () => {
+    if (!plaidItems || plaidItems.length === 0) {
+      setFetchError("No bank account connected to disconnect.");
+      return;
+    }
+
+    try {
+      setIsFetchingTransactions(true);
+      setFetchError(null);
+
+      // Remove the first Plaid item (assuming user has only one)
+      const itemId = plaidItems[0].itemId;
+      await removePlaidItem({ itemId });
+
+      console.log('Successfully disconnected bank account');
+      setFetchError('Bank account disconnected successfully!');
+      
+      // Refresh the page to update the UI
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to disconnect account:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setFetchError(`Failed to disconnect account: ${errorMessage}`);
+    } finally {
+      setIsFetchingTransactions(false);
+    }
+  };
+
+  const handleAddCustomTransactions = async () => {
+    if (!user) {
+      setFetchError("User not authenticated.");
+      return;
+    }
+
+    try {
+      setIsFetchingTransactions(true);
+      setFetchError(null);
+
+      console.log('Adding custom transactions...');
+      const result = await addCustomTransactions({
+        userId: user._id,
+      });
+
+      console.log('Custom transactions added:', result);
+      setFetchError(`Successfully added ${result.transactionsCount} custom transactions!`);
+    } catch (error) {
+      console.error('Failed to add custom transactions:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setFetchError(`Failed to add custom transactions: ${errorMessage}`);
     } finally {
       setIsFetchingTransactions(false);
     }
@@ -199,6 +257,42 @@ export default function Dashboard() {
                         </>
                       )}
                     </Button>
+                    <Button
+                      onClick={handleAddCustomTransactions}
+                      disabled={isFetchingTransactions}
+                      className="bg-[#ff8800] hover:bg-[#cc6600] text-white font-semibold"
+                    >
+                      {isFetchingTransactions ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="mr-2 h-4 w-4" />
+                          Add Sample Data
+                        </>
+                      )}
+                    </Button>
+                    {plaidAccessToken && (
+                      <Button
+                        onClick={handleDisconnectAccount}
+                        disabled={isFetchingTransactions}
+                        className="bg-[#ff0080] hover:bg-[#cc0066] text-white font-semibold"
+                      >
+                        {isFetchingTransactions ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Disconnecting...
+                          </>
+                        ) : (
+                          <>
+                            <AlertTriangle className="mr-2 h-4 w-4" />
+                            Disconnect
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                   {!plaidAccessToken && (
                     <p className="text-xs text-[#ff0080] text-center">

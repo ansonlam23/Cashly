@@ -53,6 +53,8 @@ export function PlaidLink({ onSuccess }: PlaidLinkProps) {
       setIsLoading(true);
       setError(null);
 
+      console.log('Starting bank account connection...');
+      
       // Create a sandbox public token for testing
       const publicToken = await createSandboxPublicToken({
         institutionId: "ins_109508" // Chase Bank for testing
@@ -64,7 +66,8 @@ export function PlaidLink({ onSuccess }: PlaidLinkProps) {
       await handlePlaidSuccess(publicToken);
     } catch (err) {
       console.error('Failed to connect bank account:', err);
-      setError('Failed to connect your bank account. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`Failed to connect your bank account: ${errorMessage}`);
       setIsLoading(false);
     }
   };

@@ -49,8 +49,13 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                     </div>
                     <div>
                       <p className="font-medium text-[#f5f5f5] truncate max-w-[200px]">
-                        {transaction.description}
+                        {transaction.merchant || transaction.description}
                       </p>
+                      {transaction.merchant && transaction.merchant !== transaction.description && (
+                        <p className="text-xs text-[#888] truncate max-w-[200px]">
+                          {transaction.description}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-xs text-[#888]">
                           {new Date(transaction.date).toLocaleDateString()}

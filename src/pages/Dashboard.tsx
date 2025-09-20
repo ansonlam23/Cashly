@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Navigate } from "react-router";
 import { motion } from "framer-motion";
@@ -18,16 +18,22 @@ import {
   Lightbulb,
   AlertTriangle,
   CheckCircle,
-  Loader2
+  Loader2,
+  RefreshCw,
+  Download
 } from "lucide-react";
+import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { SpendingChart } from "@/components/SpendingChart";
 import { TransactionsList } from "@/components/TransactionsList";
 import { GoalsOverview } from "@/components/GoalsOverview";
 import { InsightsPanel } from "@/components/InsightsPanel";
+import { PlaidLink } from "@/components/PlaidLink";
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated, user } = useAuth();
+  const [isFetchingTransactions, setIsFetchingTransactions] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   
   const transactions = useQuery(api.transactions.getTransactionsByUser, { limit: 10 });
   const spendingByCategory = useQuery(api.transactions.getSpendingByCategory);
@@ -35,6 +41,49 @@ export default function Dashboard() {
   const goals = useQuery(api.goals.getActiveGoals);
   const insights = useQuery(api.insights.getUnreadInsights);
   const statements = useQuery(api.bankStatements.getUserStatements);
+  const plaidItems = useQuery(api.plaidQueries.getPlaidItems);
+  const plaidAccessToken = useQuery(api.plaidQueries.getPlaidAccessToken);
+  
+  const fetchTransactionsAction = useAction(api.plaidActions.fetchTransactionsAction);
+  const saveTransactions = useMutation(api.plaidMutations.saveTransactions);
+
+  const handleFetchTransactions = async () => {
+    if (!plaidAccessToken || !user) {
+      setFetchError("No Plaid account connected. Please connect your bank account first.");
+      return;
+    }
+
+    try {
+      setIsFetchingTransactions(true);
+      setFetchError(null);
+
+      // Fetch transactions from Plaid (last 30 days)
+      const plaidTransactions = await fetchTransactionsAction({
+        accessToken: plaidAccessToken,
+      });
+
+      // Save transactions to database
+      const result = await saveTransactions({
+        transactions: plaidTransactions.map(t => ({
+          transaction_id: t.transaction_id,
+          date: t.date,
+          name: t.name,
+          amount: t.amount,
+          category: t.category,
+          merchant_name: t.merchant_name,
+          account_id: t.account_id,
+        })),
+        userId: user._id,
+      });
+
+      console.log(`Successfully fetched and saved ${result.transactionsCount} new transactions`);
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error);
+      setFetchError('Failed to fetch transactions. Please try again.');
+    } finally {
+      setIsFetchingTransactions(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -66,12 +115,45 @@ export default function Dashboard() {
           >
             {/* Header */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold tracking-tight mb-2">
-                Welcome back, {user?.name || "Student"}! 💰
-              </h1>
-              <p className="text-[#888] text-lg">
-                Let's see how your money is behaving today...
-              </p>
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight mb-2">
+                    Welcome back, {user?.name || "Student"}! 💰
+                  </h1>
+                  <p className="text-[#888] text-lg">
+                    Let's see how your money is behaving today...
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={handleFetchTransactions}
+                    disabled={isFetchingTransactions || !plaidAccessToken}
+                    className="bg-[#00ff88] hover:bg-[#00cc6a] text-[#0a0a0a] font-semibold"
+                  >
+                    {isFetchingTransactions ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Fetching...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Fetch Transactions
+                      </>
+                    )}
+                  </Button>
+                  {!plaidAccessToken && (
+                    <p className="text-xs text-[#ff0080] text-center">
+                      Connect bank account first
+                    </p>
+                  )}
+                </div>
+              </div>
+              {fetchError && (
+                <div className="bg-[#ff0080]/10 border border-[#ff0080]/20 rounded-lg p-3 mb-4">
+                  <p className="text-[#ff0080] text-sm">{fetchError}</p>
+                </div>
+              )}
             </div>
 
             {/* Quick Stats */}
@@ -227,20 +309,35 @@ export default function Dashboard() {
               </TabsContent>
             </Tabs>
 
-            {/* Upload Section */}
-            {(!statements || statements.length === 0) && (
+            {/* Plaid Connection Section */}
+            {(!plaidItems || plaidItems.length === 0) && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
                 className="mt-8"
               >
+                <PlaidLink onSuccess={() => {
+                  // Refresh the page to update the UI
+                  window.location.reload();
+                }} />
+              </motion.div>
+            )}
+
+            {/* Upload Section */}
+            {(!statements || statements.length === 0) && (!plaidItems || plaidItems.length === 0) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                className="mt-8"
+              >
                 <Card className="bg-gradient-to-br from-[#111111] to-[#1a1a1a] border-[#333] border-2 border-dashed">
                   <CardHeader className="text-center">
                     <Upload className="h-12 w-12 text-[#00ff88] mx-auto mb-4" />
-                    <CardTitle className="text-[#f5f5f5]">Upload Your First Bank Statement</CardTitle>
+                    <CardTitle className="text-[#f5f5f5]">Or Upload Your Bank Statement</CardTitle>
                     <CardDescription className="text-[#888]">
-                      Get started by uploading a PDF bank statement to see your spending insights
+                      Alternatively, upload a PDF bank statement to see your spending insights
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="text-center">

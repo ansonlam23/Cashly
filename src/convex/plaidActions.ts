@@ -59,18 +59,90 @@ export const fetchTransactionsAction = action({
     endDate: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const startDate =
-      args.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    const endDate = args.endDate || new Date().toISOString().split("T")[0];
+    try {
+      console.log('Fetching transactions with access token:', args.accessToken?.substring(0, 10) + '...');
+      
+      const startDate =
+        args.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      const endDate = args.endDate || new Date().toISOString().split("T")[0];
 
-    const request: TransactionsGetRequest = {
-      access_token: args.accessToken,
-      start_date: startDate,
-      end_date: endDate,
+      console.log('Date range:', { startDate, endDate });
+
+      const request: TransactionsGetRequest = {
+        access_token: args.accessToken,
+        start_date: startDate,
+        end_date: endDate,
+      };
+
+      console.log('Making Plaid API request...');
+      const response = await plaidClient.transactionsGet(request);
+      console.log('Plaid API response received, transaction count:', response.data.transactions?.length || 0);
+      
+      return response.data.transactions;
+    } catch (error) {
+      console.error('Error in fetchTransactionsAction:', error);
+      throw new Error(`Failed to fetch transactions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+});
+
+// Create sandbox public token for testing
+export const createSandboxPublicTokenAction = action({
+  args: { 
+    institutionId: v.optional(v.string())
+  },
+  handler: async (ctx, args) => {
+    const request = {
+      institution_id: args.institutionId || "ins_109508", // Default to Chase
+      initial_products: [Products.Transactions],
+      options: {
+        webhook: "https://your-webhook-url.com", // Optional webhook
+      },
     };
 
-    const response = await plaidClient.transactionsGet(request);
-    return response.data.transactions;
+    const response = await plaidClient.sandboxPublicTokenCreate(request);
+    return response.data.public_token;
+  },
+});
+
+// Test Plaid connection and get account info
+export const testPlaidConnectionAction = action({
+  args: { accessToken: v.string() },
+  handler: async (ctx, args) => {
+    try {
+      console.log('Testing Plaid connection with access token:', args.accessToken?.substring(0, 10) + '...');
+      
+      // Get account information
+      const accountsResponse = await plaidClient.accountsGet({
+        access_token: args.accessToken,
+      });
+      
+      console.log('Accounts found:', accountsResponse.data.accounts?.length || 0);
+      
+      // Get item information
+      const itemResponse = await plaidClient.itemGet({
+        access_token: args.accessToken,
+      });
+      
+      console.log('Item info:', {
+        itemId: itemResponse.data.item?.item_id,
+        institutionId: itemResponse.data.item?.institution_id,
+        availableProducts: itemResponse.data.item?.available_products,
+        billedProducts: itemResponse.data.item?.billed_products,
+      });
+      
+      return {
+        success: true,
+        accountsCount: accountsResponse.data.accounts?.length || 0,
+        itemId: itemResponse.data.item?.item_id,
+        institutionId: itemResponse.data.item?.institution_id,
+        availableProducts: itemResponse.data.item?.available_products,
+        billedProducts: itemResponse.data.item?.billed_products,
+      };
+    } catch (error) {
+      console.error('Error testing Plaid connection:', error);
+      throw new Error(`Failed to test Plaid connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   },
 });
 

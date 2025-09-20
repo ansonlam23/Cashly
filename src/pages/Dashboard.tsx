@@ -45,6 +45,7 @@ export default function Dashboard() {
   const plaidAccessToken = useQuery(api.plaidQueries.getPlaidAccessToken);
   
   const fetchTransactionsAction = useAction(api.plaidActions.fetchTransactionsAction);
+  const testPlaidConnection = useAction(api.plaidActions.testPlaidConnectionAction);
   const saveTransactions = useMutation(api.plaidMutations.saveTransactions);
 
   const handleFetchTransactions = async () => {
@@ -57,10 +58,21 @@ export default function Dashboard() {
       setIsFetchingTransactions(true);
       setFetchError(null);
 
+      console.log('Starting transaction fetch...');
+      console.log('Access token:', plaidAccessToken?.substring(0, 10) + '...');
+      console.log('User ID:', user._id);
+
       // Fetch transactions from Plaid (last 30 days)
       const plaidTransactions = await fetchTransactionsAction({
         accessToken: plaidAccessToken,
       });
+
+      console.log('Fetched transactions from Plaid:', plaidTransactions?.length || 0);
+
+      if (!plaidTransactions || plaidTransactions.length === 0) {
+        setFetchError('No transactions found. This might be normal for a new sandbox account.');
+        return;
+      }
 
       // Save transactions to database
       const result = await saveTransactions({
@@ -79,7 +91,34 @@ export default function Dashboard() {
       console.log(`Successfully fetched and saved ${result.transactionsCount} new transactions`);
     } catch (error) {
       console.error('Failed to fetch transactions:', error);
-      setFetchError('Failed to fetch transactions. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setFetchError(`Failed to fetch transactions: ${errorMessage}`);
+    } finally {
+      setIsFetchingTransactions(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    if (!plaidAccessToken) {
+      setFetchError("No Plaid account connected. Please connect your bank account first.");
+      return;
+    }
+
+    try {
+      setIsFetchingTransactions(true);
+      setFetchError(null);
+
+      console.log('Testing Plaid connection...');
+      const result = await testPlaidConnection({
+        accessToken: plaidAccessToken,
+      });
+
+      console.log('Connection test result:', result);
+      setFetchError(`Connection successful! Found ${result.accountsCount} accounts. Institution: ${result.institutionId}`);
+    } catch (error) {
+      console.error('Connection test failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setFetchError(`Connection test failed: ${errorMessage}`);
     } finally {
       setIsFetchingTransactions(false);
     }
@@ -125,23 +164,42 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Button
-                    onClick={handleFetchTransactions}
-                    disabled={isFetchingTransactions || !plaidAccessToken}
-                    className="bg-[#00ff88] hover:bg-[#00cc6a] text-[#0a0a0a] font-semibold"
-                  >
-                    {isFetchingTransactions ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Fetching...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Fetch Transactions
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleTestConnection}
+                      disabled={isFetchingTransactions || !plaidAccessToken}
+                      className="bg-[#0088ff] hover:bg-[#0066cc] text-white font-semibold"
+                    >
+                      {isFetchingTransactions ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Testing...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          Test Connection
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleFetchTransactions}
+                      disabled={isFetchingTransactions || !plaidAccessToken}
+                      className="bg-[#00ff88] hover:bg-[#00cc6a] text-[#0a0a0a] font-semibold"
+                    >
+                      {isFetchingTransactions ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Fetching...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Fetch Transactions
+                        </>
+                      )}
+                    </Button>
+                  </div>
                   {!plaidAccessToken && (
                     <p className="text-xs text-[#ff0080] text-center">
                       Connect bank account first

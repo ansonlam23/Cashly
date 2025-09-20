@@ -10,34 +10,13 @@ interface PlaidLinkProps {
 }
 
 export function PlaidLink({ onSuccess }: PlaidLinkProps) {
-  const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createLinkToken = useAction(api.plaidActions.createLinkTokenAction);
+  const createSandboxPublicToken = useAction(api.plaidActions.createSandboxPublicTokenAction);
   const exchangePublicToken = useAction(api.plaidActions.exchangePublicTokenAction);
   const savePlaidItem = useMutation(api.plaidMutations.savePlaidItem);
-
-  useEffect(() => {
-    const initializePlaid = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        // Create link token
-        const token = await createLinkToken({ userId: "demo-user" });
-        setLinkToken(token);
-      } catch (err) {
-        console.error('Failed to initialize Plaid:', err);
-        setError('Failed to initialize Plaid Link');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializePlaid();
-  }, [createLinkToken]);
 
   const handlePlaidSuccess = async (publicToken: string) => {
     try {
@@ -69,18 +48,25 @@ export function PlaidLink({ onSuccess }: PlaidLinkProps) {
     console.log('Plaid Link exited');
   };
 
-  const openPlaidLink = () => {
-    if (!linkToken) return;
+  const connectBankAccount = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-    // For now, we'll use a simple approach since we don't have the Plaid Link component
-    // In a real implementation, you'd use the @plaid/link-react component
-    console.log('Opening Plaid Link with token:', linkToken);
-    
-    // Simulate successful connection for demo purposes
-    // Replace this with actual Plaid Link integration
-    setTimeout(() => {
-      handlePlaidSuccess('sandbox_public_token_demo');
-    }, 2000);
+      // Create a sandbox public token for testing
+      const publicToken = await createSandboxPublicToken({
+        institutionId: "ins_109508" // Chase Bank for testing
+      });
+
+      console.log('Created sandbox public token:', publicToken);
+      
+      // Exchange the public token for an access token
+      await handlePlaidSuccess(publicToken);
+    } catch (err) {
+      console.error('Failed to connect bank account:', err);
+      setError('Failed to connect your bank account. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   if (isConnected) {
@@ -102,9 +88,9 @@ export function PlaidLink({ onSuccess }: PlaidLinkProps) {
   return (
     <Card className="bg-[#111111] border-[#333]">
       <CardHeader>
-        <CardTitle className="text-[#f5f5f5]">Connect Your Bank Account</CardTitle>
+        <CardTitle className="text-[#f5f5f5]">Connect Your Bank Account (Sandbox)</CardTitle>
         <CardDescription className="text-[#888]">
-          Connect your bank account to automatically fetch and analyze your transactions
+          Connect a test bank account using Plaid's sandbox environment to fetch and analyze transactions
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -115,8 +101,8 @@ export function PlaidLink({ onSuccess }: PlaidLinkProps) {
         )}
         
         <Button
-          onClick={openPlaidLink}
-          disabled={isLoading || !linkToken}
+          onClick={connectBankAccount}
+          disabled={isLoading}
           className="w-full bg-[#00ff88] hover:bg-[#00cc6a] text-[#0a0a0a] font-semibold"
         >
           {isLoading ? (
@@ -127,7 +113,7 @@ export function PlaidLink({ onSuccess }: PlaidLinkProps) {
           ) : (
             <>
               <Link className="mr-2 h-4 w-4" />
-              Connect Bank Account
+              Connect Bank Account (Sandbox)
             </>
           )}
         </Button>

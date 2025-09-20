@@ -51,10 +51,12 @@ const schema = defineSchema(
       })),
     }).index("by_user", ["userId"]),
 
-    // Individual transactions extracted from bank statements
+    // Individual transactions extracted from bank statements or Plaid
     transactions: defineTable({
       userId: v.id("users"),
-      statementId: v.id("bankStatements"),
+      statementId: v.optional(v.id("bankStatements")), // Optional for Plaid transactions
+      plaidTransactionId: v.optional(v.string()), // Plaid transaction ID
+      accountId: v.optional(v.string()), // Plaid account ID
       date: v.string(),
       description: v.string(),
       amount: v.number(),
@@ -65,7 +67,18 @@ const schema = defineSchema(
     }).index("by_user", ["userId"])
       .index("by_statement", ["statementId"])
       .index("by_user_and_date", ["userId", "date"])
-      .index("by_user_and_category", ["userId", "category"]),
+      .index("by_user_and_category", ["userId", "category"])
+      .index("by_plaid_id", ["plaidTransactionId"]),
+
+    // Plaid integration - stored access tokens and item info
+    plaidItems: defineTable({
+      userId: v.id("users"),
+      itemId: v.string(), // Plaid item ID
+      accessToken: v.string(), // Encrypted access token
+      institutionId: v.optional(v.string()), // Institution ID
+      createdAt: v.number(),
+    }).index("by_user", ["userId"])
+      .index("by_item_id", ["itemId"]),
 
     // User financial goals and investment plans
     financialGoals: defineTable({

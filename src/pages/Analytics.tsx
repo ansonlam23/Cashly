@@ -7,7 +7,7 @@ import { SpendingChart } from "@/components/SpendingChart";
 import { IncomeVsSpendingChart } from "@/components/IncomeVsSpendingChart";
 import { SpendingInsights } from "@/components/SpendingInsights";
 import { TopMerchants } from "@/components/TopMerchants";
-import { SpendingTrendChart } from "@/components/SpendingTrendChart";
+import { BalanceSummary } from "@/components/BalanceSummary";
 import { motion } from "framer-motion";
 
 export default function Analytics() {
@@ -17,8 +17,7 @@ export default function Analytics() {
   const incomeVsSpending = useQuery(api.transactions.getIncomeVsSpending);
   const monthlyTrend = useQuery(api.transactions.getMonthlySpendingTrend, { months: 6 });
   const topMerchants = useQuery(api.transactions.getTopMerchants, { limit: 5 });
-  const dailyTrend = useQuery(api.transactions.getDailySpendingTrend, { days: 30 });
-  const weeklyTrend = useQuery(api.transactions.getWeeklySpendingTrend, { weeks: 12 });
+  const currentBalance = useQuery(api.transactions.getCurrentBalance);
 
   if (isLoading) {
     return (
@@ -69,24 +68,38 @@ export default function Analytics() {
         </div>
 
         <div className="space-y-8">
+          {/* Current Balance and Net Flows */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <BalanceSummary 
+              currentBalance={currentBalance?.currentBalance || 0}
+              totalIncome={currentBalance?.totalIncome || 0}
+              totalSpending={currentBalance?.totalSpending || 0}
+              netFlow={currentBalance?.netFlow || 0}
+            />
+          </motion.div>
+
           {/* Core Spending Insights */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
             className="grid grid-cols-1 lg:grid-cols-2 gap-6"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.4 }}
+              transition={{ duration: 0.4, delay: 0.5 }}
             >
               <SpendingChart data={spendingByCategory || []} />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.5 }}
+              transition={{ duration: 0.4, delay: 0.6 }}
             >
               <IncomeVsSpendingChart data={incomeVsSpending || { totalIncome: 0, totalSpending: 0 }} />
             </motion.div>
@@ -96,7 +109,7 @@ export default function Analytics() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
           >
             <SpendingInsights 
               spendingByCategory={spendingByCategory || []} 
@@ -108,69 +121,9 @@ export default function Analytics() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+            transition={{ duration: 0.5, delay: 0.8 }}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.8 }}
-            >
-              <TopMerchants merchants={topMerchants || []} />
-            </motion.div>
-            
-            {/* Monthly Trend Chart */}
-            {monthlyTrend && monthlyTrend.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.9 }}
-              >
-                <SpendingTrendChart 
-                  data={monthlyTrend.map(item => ({
-                    period: item.month,
-                    amount: item.amount,
-                    label: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-                  }))}
-                  title="Monthly Spending Trend"
-                  description="Your spending patterns over the last 6 months"
-                  type="area"
-                />
-              </motion.div>
-            )}
-          </motion.div>
-
-          {/* Daily and Weekly Trends */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 1.0 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 1.1 }}
-            >
-              <SpendingTrendChart 
-                data={dailyTrend || []}
-                title="Daily Spending Trend"
-                description="Your daily spending over the last 30 days"
-                type="line"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 1.2 }}
-            >
-              <SpendingTrendChart 
-                data={weeklyTrend || []}
-                title="Weekly Spending Trend"
-                description="Your weekly spending over the last 12 weeks"
-                type="area"
-              />
-            </motion.div>
+            <TopMerchants merchants={topMerchants || []} />
           </motion.div>
         </div>
       </motion.div>

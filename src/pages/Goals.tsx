@@ -380,6 +380,7 @@ export default function Goals() {
               onAddToGoal={handleAddToGoal}
               onAchieveMilestone={handleAchieveMilestone}
               onDeleteGoal={handleDeleteGoal}
+              onCreateGoal={() => setShowCreateForm(true)}
             />
           </TabsContent>
 
@@ -389,6 +390,7 @@ export default function Goals() {
               onAddToGoal={handleAddToGoal}
               onAchieveMilestone={handleAchieveMilestone}
               onDeleteGoal={handleDeleteGoal}
+              onCreateGoal={() => setShowCreateForm(true)}
             />
           </TabsContent>
 
@@ -398,6 +400,7 @@ export default function Goals() {
               onAddToGoal={handleAddToGoal}
               onAchieveMilestone={handleAchieveMilestone}
               onDeleteGoal={handleDeleteGoal}
+              onCreateGoal={() => setShowCreateForm(true)}
             />
           </TabsContent>
         </Tabs>
@@ -417,12 +420,14 @@ function GoalsList({
   goals, 
   onAddToGoal, 
   onAchieveMilestone, 
-  onDeleteGoal 
+  onDeleteGoal,
+  onCreateGoal
 }: { 
   goals: any[]; 
   onAddToGoal: (goalId: string, amount: number) => void;
   onAchieveMilestone: (goalId: string, milestoneIndex: number) => void;
   onDeleteGoal: (goalId: string) => void;
+  onCreateGoal: () => void;
 }) {
   if (goals.length === 0) {
     return (
@@ -435,7 +440,10 @@ function GoalsList({
         <Target className="h-16 w-16 mx-auto mb-4 text-[#888] opacity-50" />
         <h3 className="text-xl font-semibold text-[#f5f5f5] mb-2">No goals yet</h3>
         <p className="text-[#888] mb-4">Create your first goal to start building your financial future</p>
-        <Button className="bg-[#00ff88] hover:bg-[#00cc6a] text-black">
+        <Button 
+          onClick={onCreateGoal}
+          className="bg-[#00ff88] hover:bg-[#00cc6a] text-black"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Goal
         </Button>
@@ -444,8 +452,18 @@ function GoalsList({
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {goals.map((goal, index) => {
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button 
+          onClick={onCreateGoal}
+          className="bg-[#00ff88] hover:bg-[#00cc6a] text-black font-semibold"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create Goal
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {goals.map((goal, index) => {
         const progress = (goal.currentAmount / goal.targetAmount) * 100;
         const PriorityIcon = PRIORITY_ICONS[goal.priority];
         const isCompleted = goal.currentAmount >= goal.targetAmount;
@@ -536,6 +554,7 @@ function GoalsList({
           </motion.div>
         );
       })}
+      </div>
     </div>
   );
 }

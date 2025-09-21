@@ -276,6 +276,253 @@ export const getWeeklySpendingTrend = query({
   },
 });
 
+export const getCategoryTrends = query({
+  args: { months: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    const months = args.months || 6;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(endDate.getMonth() - months);
+
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.lt(q.field("amount"), 0)) // Only spending transactions
+      .collect();
+
+    const categoryTrends = new Map<string, Map<string, number>>();
+    
+    for (const transaction of transactions) {
+      const transactionDate = new Date(transaction.date);
+      if (transactionDate >= startDate && transactionDate <= endDate) {
+        const monthKey = transactionDate.toISOString().substring(0, 7); // YYYY-MM
+        const category = transaction.category;
+        
+        if (!categoryTrends.has(category)) {
+          categoryTrends.set(category, new Map());
+        }
+        
+        const categoryData = categoryTrends.get(category)!;
+        const current = categoryData.get(monthKey) || 0;
+        categoryData.set(monthKey, current + Math.abs(transaction.amount));
+      }
+    }
+
+    // Generate trend data for each category
+    const result = [];
+    for (const [category, monthlyData] of categoryTrends.entries()) {
+      const trendData = [];
+      for (let i = 0; i < months; i++) {
+        const date = new Date(endDate);
+        date.setMonth(date.getMonth() - i);
+        const monthKey = date.toISOString().substring(0, 7);
+        const amount = monthlyData.get(monthKey) || 0;
+        
+        trendData.unshift({
+          period: monthKey,
+          amount,
+          label: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        });
+      }
+      
+      // Calculate growth rate
+      const firstMonth = trendData[0]?.amount || 0;
+      const lastMonth = trendData[trendData.length - 1]?.amount || 0;
+      const growthRate = firstMonth > 0 ? ((lastMonth - firstMonth) / firstMonth) * 100 : 0;
+      
+      result.push({
+        category,
+        data: trendData,
+        growthRate,
+        totalSpent: trendData.reduce((sum, item) => sum + item.amount, 0)
+      });
+    }
+
+    return result.sort((a, b) => b.totalSpent - a.totalSpent);
+  },
+});
+
+export const getRecurringExpenses = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.lt(q.field("amount"), 0)) // Only spending transactions
+      .collect();
+
+    const merchantFrequency = new Map<string, { count: number; totalAmount: number; lastTransaction: string; transactions: any[] }>();
+    
+    for (const transaction of transactions) {
+      const merchant = transaction.merchant || transaction.description;
+      if (merchantFrequency.has(merchant)) {
+        const data = merchantFrequency.get(merchant)!;
+        data.count += 1;
+        data.totalAmount += Math.abs(transaction.amount);
+        data.transactions.push(transaction);
+        if (transaction.date > data.lastTransaction) {
+          data.lastTransaction = transaction.date;
+        }
+      } else {
+        merchantFrequency.set(merchant, {
+          count: 1,
+          totalAmount: Math.abs(transaction.amount),
+          lastTransaction: transaction.date,
+          transactions: [transaction]
+        });
+      }
+    }
+
+    // Find recurring expenses (3+ transactions)
+    const recurring = Array.from(merchantFrequency.entries())
+      .filter(([_, data]) => data.count >= 3)
+      .map(([merchant, data]) => ({
+        merchant,
+        frequency: data.count,
+        totalAmount: data.totalAmount,
+        averageAmount: data.totalAmount / data.count,
+        lastTransaction: data.lastTransaction,
+        category: data.transactions[0]?.category || "Other",
+        isSubscription: data.count >= 6 && data.transactions.every(t => 
+          Math.abs(t.amount - data.transactions[0].amount) < 5 // Similar amounts
+        )
+      }))
+      .sort((a, b) => b.totalAmount - a.totalAmount);
+
+    return recurring;
+  },
+});
+
+export const getSpendingForecast = query({
+  args: { months: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return { forecast: [], insights: [] };
+
+    const months = args.months || 6;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(endDate.getMonth() - 3); // Use last 3 months for prediction
+
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.lt(q.field("amount"), 0)) // Only spending transactions
+      .collect();
+
+    const monthlyTotals = new Map<string, number>();
+    
+    for (const transaction of transactions) {
+      const transactionDate = new Date(transaction.date);
+      if (transactionDate >= startDate && transactionDate <= endDate) {
+        const monthKey = transactionDate.toISOString().substring(0, 7);
+        const current = monthlyTotals.get(monthKey) || 0;
+        monthlyTotals.set(monthKey, current + Math.abs(transaction.amount));
+      }
+    }
+
+    // Calculate average monthly spending
+    const monthlyAmounts = Array.from(monthlyTotals.values());
+    const averageMonthly = monthlyAmounts.length > 0 
+      ? monthlyAmounts.reduce((sum, amount) => sum + amount, 0) / monthlyAmounts.length 
+      : 0;
+
+    // Generate forecast
+    const forecast = [];
+    for (let i = 1; i <= months; i++) {
+      const forecastDate = new Date(endDate);
+      forecastDate.setMonth(forecastDate.getMonth() + i);
+      const monthKey = forecastDate.toISOString().substring(0, 7);
+      
+      forecast.push({
+        period: monthKey,
+        predictedAmount: averageMonthly,
+        label: forecastDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      });
+    }
+
+    // Generate insights
+    const insights = [];
+    if (averageMonthly > 0) {
+      const yearlyProjection = averageMonthly * 12;
+      insights.push({
+        type: "yearly_projection",
+        message: `At current spending rate, you'll spend $${yearlyProjection.toLocaleString()} this year`,
+        amount: yearlyProjection
+      });
+
+      const topCategory = await ctx.db
+        .query("transactions")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .filter((q) => q.lt(q.field("amount"), 0))
+        .collect();
+
+      const categoryTotals = new Map<string, number>();
+      for (const transaction of topCategory) {
+        const category = transaction.category;
+        const current = categoryTotals.get(category) || 0;
+        categoryTotals.set(category, current + Math.abs(transaction.amount));
+      }
+
+      const topCategoryEntry = Array.from(categoryTotals.entries())
+        .sort((a, b) => b[1] - a[1])[0];
+
+      if (topCategoryEntry) {
+        const [category, amount] = topCategoryEntry;
+        const percentage = (amount / Array.from(categoryTotals.values()).reduce((sum, val) => sum + val, 0)) * 100;
+        insights.push({
+          type: "top_category",
+          message: `${category} is your #1 expense (${percentage.toFixed(1)}%)`,
+          category,
+          percentage
+        });
+      }
+    }
+
+    return { forecast, insights };
+  },
+});
+
+export const getCurrentBalance = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return { currentBalance: 0, totalIncome: 0, totalSpending: 0, netFlow: 0 };
+
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    let totalIncome = 0;
+    let totalSpending = 0;
+
+    for (const transaction of transactions) {
+      if (transaction.amount > 0) {
+        totalIncome += transaction.amount;
+      } else {
+        totalSpending += Math.abs(transaction.amount);
+      }
+    }
+
+    const netFlow = totalIncome - totalSpending;
+    const currentBalance = netFlow; // Assuming starting balance is 0
+
+    return {
+      currentBalance,
+      totalIncome,
+      totalSpending,
+      netFlow
+    };
+  },
+});
+
 export const addTransaction = mutation({
   args: {
     statementId: v.id("bankStatements"),

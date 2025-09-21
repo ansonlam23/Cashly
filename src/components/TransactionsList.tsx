@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatCurrency } from "@/lib/format";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 interface Transaction {
@@ -76,7 +77,7 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                         : "text-[#ff0080]"
                     }`}>
                       {transaction.transactionType === "credit" ? "+" : "-"}
-                      ${Math.abs(transaction.amount).toFixed(2)}
+                      {formatCurrency(Math.abs(transaction.amount))}
                     </p>
                   </div>
                 </div>

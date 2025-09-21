@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/format";
 import { AlertTriangle, TrendingUp, Coffee, ShoppingCart, Car, Utensils } from "lucide-react";
 
 interface SpendingInsightsProps {
@@ -65,13 +66,13 @@ export function SpendingInsights({ spendingByCategory, monthlyTrend }: SpendingI
             <div className="space-y-2">
               <div className="text-sm text-[#888]">This Month</div>
               <div className="text-2xl font-bold text-[#f5f5f5]">
-                ${currentMonth?.amount.toFixed(2) || "0.00"}
+                {formatCurrency(currentMonth?.amount || 0)}
               </div>
             </div>
             <div className="space-y-2">
               <div className="text-sm text-[#888]">Last Month</div>
               <div className="text-2xl font-bold text-[#f5f5f5]">
-                ${previousMonth?.amount.toFixed(2) || "0.00"}
+                {formatCurrency(previousMonth?.amount || 0)}
               </div>
             </div>
           </div>
@@ -126,7 +127,7 @@ export function SpendingInsights({ spendingByCategory, monthlyTrend }: SpendingI
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-[#ff8800]">${item.amount.toFixed(2)}</div>
+                      <div className="font-bold text-[#ff8800]">{formatCurrency(item.amount)}</div>
                     </div>
                   </div>
                 );
@@ -163,7 +164,7 @@ export function SpendingInsights({ spendingByCategory, monthlyTrend }: SpendingI
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-[#00ff88]">
-                ${topCategory.amount.toFixed(2)}
+                {formatCurrency(topCategory.amount)}
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
-import { MoneyMentorToolbar } from "../toolbar.tsx";
+import { CashlyToolbar } from "../toolbar.tsx";
 import { InstrumentationProvider } from "@/instrumentation.tsx";
 import AuthPage from "@/pages/Auth.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
@@ -47,7 +47,7 @@ function RouteSyncer() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <MoneyMentorToolbar />
+    <CashlyToolbar />
     <InstrumentationProvider>
       <ConvexAuthProvider client={convex}>
         <BrowserRouter>

@@ -148,13 +148,13 @@ export function getSelectedElementsPrompt(elements: HTMLElement[]) {
   return null;
 }
 
-const HIGHLIGHT_CLASS = "moneymentor-toolbar-highlight";
+const HIGHLIGHT_CLASS = "cashly-toolbar-highlight";
 
 // Add highlight style to the document
 const injectHighlightStyle = () => {
-  if (document.getElementById("moneymentor-toolbar-style")) return;
+  if (document.getElementById("cashly-toolbar-style")) return;
   const style = document.createElement("style");
-  style.id = "moneymentor-toolbar-style";
+  style.id = "cashly-toolbar-style";
   style.innerHTML = `
     .${HIGHLIGHT_CLASS} {
       outline: 2px solid #0070f3;
@@ -252,14 +252,14 @@ const Overlay: React.FC<{
   );
 };
 
-export const MoneyMentorToolbar: React.FC = () => {
+export const CashlyToolbar: React.FC = () => {
   const [selectMode, setSelectMode] = useState(false);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const [showDevOverlay, setShowDevOverlay] = React.useState(true);
 
   const isDevDeployment =
     typeof window !== "undefined" &&
-    window.location.hostname.endsWith(".moneymentor.app") &&
+    window.location.hostname.endsWith(".cashly.app") &&
     window.self === window.top;
 
   React.useEffect(() => {
@@ -269,10 +269,10 @@ export const MoneyMentorToolbar: React.FC = () => {
   // Listen for postMessage from parent to enable/disable select mode
   React.useEffect(() => {
     function handleMessage(event: MessageEvent) {
-      if (event.data && event.data.type === "moneymentor-toolbar-enable-select") {
+      if (event.data && event.data.type === "cashly-toolbar-enable-select") {
         setSelectMode(true);
       }
-      if (event.data && event.data.type === "moneymentor-toolbar-disable-select") {
+      if (event.data && event.data.type === "cashly-toolbar-disable-select") {
         setSelectMode(false);
       }
     }
@@ -299,7 +299,7 @@ export const MoneyMentorToolbar: React.FC = () => {
 
     window.parent.postMessage(
       {
-        type: "moneymentor-toolbar-select",
+        type: "cashly-toolbar-select",
         selector,
         reactHierarchy: hierarchy,
         reactHierarchyFormatted: formatted,
@@ -328,8 +328,8 @@ export const MoneyMentorToolbar: React.FC = () => {
   const getProjectName = () => {
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname;
-      // Extract project name from hostname (e.g., "projectname.moneymentor.app")
-      const match = hostname.match(/^([^.]+)\.moneymentor\.app$/);
+      // Extract project name from hostname (e.g., "projectname.cashly.app")
+      const match = hostname.match(/^([^.]+)\.cashly\.app$/);
       return match ? match[1] : "unknown";
     }
     return "unknown";
@@ -362,7 +362,7 @@ export const MoneyMentorToolbar: React.FC = () => {
 
   const handleGoToProject = () => {
     const projectName = getProjectName();
-    window.location.href = `https://moneymentor.app/project/${projectName}?publish=true`;
+    window.location.href = `https://cashly.app/project/${projectName}?publish=true`;
   };
 
   return (
@@ -456,4 +456,4 @@ export const MoneyMentorToolbar: React.FC = () => {
   );
 };
 
-export default MoneyMentorToolbar;
+export default CashlyToolbar;

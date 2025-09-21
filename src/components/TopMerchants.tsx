@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/format";
 import { TrendingUp, Store, ShoppingBag, Coffee, Car, Utensils } from "lucide-react";
 
 interface Merchant {
@@ -89,7 +90,7 @@ export function TopMerchants({ merchants }: TopMerchantsProps) {
                       {merchant.category}
                     </Badge>
                     <div className="text-right">
-                      <div className="font-bold text-[#f5f5f5]">${merchant.amount.toFixed(2)}</div>
+                      <div className="font-bold text-[#f5f5f5]">{formatCurrency(merchant.amount)}</div>
                     </div>
                   </div>
                 </div>

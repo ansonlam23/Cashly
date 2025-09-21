@@ -26,7 +26,7 @@ export const createLinkTokenAction = action({
   handler: async (ctx, args) => {
     const request = {
       user: { client_user_id: args.userId },
-      client_name: "MoneyMentor",
+      client_name: "Cashly",
       products: [Products.Transactions],
       country_codes: [CountryCode.Us],
       language: "en",

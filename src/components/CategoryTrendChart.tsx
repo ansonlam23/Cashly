@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { formatCurrency } from "@/lib/format";
 import { TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -62,7 +63,6 @@ export function CategoryTrendChart({ data, title, description }: CategoryTrendCh
     return chartItem;
   }) || [];
 
-  const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
   const formatTooltip = (value: number, name: string) => [formatCurrency(value), name];
 
   return (

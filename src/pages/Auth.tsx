@@ -240,7 +240,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 rel="noopener noreferrer"
                 className="underline hover:text-primary transition-colors"
               >
-                MoneyMentor
+                Cashly
               </a>
             </div>
           </Card>

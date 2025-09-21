@@ -29,28 +29,28 @@ type AsyncError = {
 
 type GenericError = SyncError | AsyncError;
 
-async function reportErrorToMoneyMentor(errorData: {
+async function reportErrorToCashly(errorData: {
   error: string;
   stackTrace?: string;
   filename?: string;
   lineno?: number;
   colno?: number;
 }) {
-  if (!import.meta.env.VITE_MONEYMENTOR_APP_ID) {
+  if (!import.meta.env.VITE_CASHLY_APP_ID) {
     return;
   }
 
   try {
-    await fetch(import.meta.env.VITE_MONEYMENTOR_MONITORING_URL, {
+    await fetch(import.meta.env.VITE_CASHLY_MONITORING_URL, {
       method: "POST",
       body: JSON.stringify({
         ...errorData,
         url: window.location.href,
-        projectSemanticIdentifier: import.meta.env.VITE_MONEYMENTOR_APP_ID,
+        projectSemanticIdentifier: import.meta.env.VITE_CASHLY_APP_ID,
       }),
     });
   } catch (error) {
-    console.error("Failed to report error to MoneyMentor:", error);
+    console.error("Failed to report error to Cashly:", error);
   }
 }
 
@@ -72,7 +72,7 @@ function ErrorDialog({
         <DialogHeader>
           <DialogTitle>Runtime Error</DialogTitle>
         </DialogHeader>
-        A runtime error occurred. Open the MoneyMentor editor to automatically debug the
+        A runtime error occurred. Open the Cashly editor to automatically debug the
         error.
         <div className="mt-4">
           <Collapsible>
@@ -90,7 +90,7 @@ function ErrorDialog({
         </div>
         <DialogFooter>
           <a
-            href={`https://moneymentor.app/project/${import.meta.env.VITE_MONEYMENTOR_APP_ID}`}
+            href={`https://cashly.app/project/${import.meta.env.VITE_CASHLY_APP_ID}`}
             target="_blank"
           >
             <Button>
@@ -136,7 +136,7 @@ class ErrorBoundary extends React.Component<
     //   // Warning: `captureOwnerStack` is not available in production.
     //   React.captureOwnerStack(),
     // );
-    reportErrorToMoneyMentor({
+    reportErrorToCashly({
       error: error.message,
       stackTrace: error.stack,
     });
@@ -187,8 +187,8 @@ export function InstrumentationProvider({
           colno: event.colno,
         });
 
-        if (import.meta.env.VITE_MONEYMENTOR_APP_ID) {
-          await reportErrorToMoneyMentor({
+        if (import.meta.env.VITE_CASHLY_APP_ID) {
+          await reportErrorToCashly({
             error: event.message,
             stackTrace: event.error?.stack,
             filename: event.filename,
@@ -205,8 +205,8 @@ export function InstrumentationProvider({
       try {
         console.error(event);
 
-        if (import.meta.env.VITE_MONEYMENTOR_APP_ID) {
-          await reportErrorToMoneyMentor({
+        if (import.meta.env.VITE_CASHLY_APP_ID) {
+          await reportErrorToCashly({
             error: event.reason.message,
             stackTrace: event.reason.stack,
           });

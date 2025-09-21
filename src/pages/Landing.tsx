@@ -98,7 +98,7 @@ export default function Landing() {
               <div className="w-8 h-8 bg-gradient-to-br from-[#00ff88] to-[#0088ff] rounded-lg flex items-center justify-center">
                 <span className="text-[#0a0a0a] font-bold text-sm">M</span>
               </div>
-              <span className="text-[#f5f5f5] font-bold text-xl">MoneyMentor</span>
+              <span className="text-[#f5f5f5] font-bold text-xl">Cashly</span>
             </div>
             
             <div className="flex items-center gap-4">
@@ -150,7 +150,7 @@ export default function Landing() {
             </Badge>
             
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-r from-[#00ff88] via-[#0088ff] to-[#ff0080] bg-clip-text text-transparent">
-              MoneyMentor
+              Cashly
             </h1>
             
             <p className="text-xl md:text-2xl text-[#ccc] mb-4 max-w-3xl mx-auto">
@@ -196,7 +196,7 @@ export default function Landing() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-[#f5f5f5]">
-              Why Students Love MoneyMentor
+              Why Students Love Cashly
             </h2>
             <p className="text-xl text-[#888] max-w-3xl mx-auto">
               We built the financial tool we wished we had as students. No intimidating jargon, 
@@ -342,19 +342,19 @@ export default function Landing() {
               <div className="w-8 h-8 bg-gradient-to-br from-[#00ff88] to-[#0088ff] rounded-lg flex items-center justify-center">
                 <span className="text-[#0a0a0a] font-bold text-sm">M</span>
               </div>
-              <span className="text-[#f5f5f5] font-bold text-xl">MoneyMentor</span>
+              <span className="text-[#f5f5f5] font-bold text-xl">Cashly</span>
             </div>
             
             <div className="flex items-center gap-6 text-sm text-[#888]">
               <span>Built by students, for students</span>
               <span>•</span>
               <a 
-                href="https://moneymentor.app" 
+                href="https://cashly.app" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="hover:text-[#00ff88] transition-colors"
               >
-                Powered by MoneyMentor
+                Powered by Cashly
               </a>
             </div>
           </div>

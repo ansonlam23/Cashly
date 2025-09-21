@@ -3,6 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
+import { formatNumber } from "@/lib/format";
 
 interface SpendingData {
   category: string;
@@ -55,7 +56,7 @@ export function SpendingChart({ data }: SpendingChartProps) {
                   </Pie>
                   <Tooltip 
                     formatter={(value: number, name, props) => [
-                      `$${value.toFixed(2)}`, 
+                      `$${formatNumber(value)}`, 
                       props.payload.category || 'Amount'
                     ]}
                     contentStyle={{
@@ -100,7 +101,7 @@ export function SpendingChart({ data }: SpendingChartProps) {
                       <span className="text-[#f5f5f5]">{item.category}</span>
                     </div>
                     <div className="text-right">
-                      <div className="text-[#f5f5f5] font-medium">${item.amount.toFixed(2)}</div>
+                      <div className="text-[#f5f5f5] font-medium">${formatNumber(item.amount)}</div>
                       <div className="text-[#888] text-xs">{item.percentage}%</div>
                     </div>
                   </div>

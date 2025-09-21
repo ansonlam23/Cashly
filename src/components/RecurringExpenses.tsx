@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/format";
 import { Zap, Calendar, DollarSign, AlertTriangle, CheckCircle } from "lucide-react";
 
 interface RecurringExpense {
@@ -105,7 +106,7 @@ export function RecurringExpenses({ expenses, title, description }: RecurringExp
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-[#f5f5f5]">${expense.averageAmount.toFixed(2)}</div>
+                    <div className="font-bold text-[#f5f5f5]">{formatCurrency(expense.averageAmount)}</div>
                     <div className="text-sm text-[#888]">per transaction</div>
                     <Badge className={`${CATEGORY_COLORS[expense.category] || 'bg-gray-500'} text-white mt-1`}>
                       {expense.category}
@@ -145,7 +146,7 @@ export function RecurringExpenses({ expenses, title, description }: RecurringExp
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-[#f5f5f5]">${expense.totalAmount.toFixed(2)}</div>
+                  <div className="font-bold text-[#f5f5f5]">{formatCurrency(expense.totalAmount)}</div>
                   <div className="text-sm text-[#888]">total spent</div>
                   <Badge className={`${CATEGORY_COLORS[expense.category] || 'bg-gray-500'} text-white mt-1`}>
                     {expense.category}
@@ -179,7 +180,7 @@ export function RecurringExpenses({ expenses, title, description }: RecurringExp
             
             <div className="p-4 bg-[#1a1a1a] rounded-lg">
               <div className="text-2xl font-bold text-[#f5f5f5]">
-                ${expenses.reduce((sum, expense) => sum + expense.averageAmount, 0).toFixed(2)}
+                {formatCurrency(expenses.reduce((sum, expense) => sum + expense.averageAmount, 0))}
               </div>
               <div className="text-sm text-[#888]">Average per transaction</div>
             </div>

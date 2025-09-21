@@ -91,12 +91,12 @@ function generateInsightsDirectly(financialData: any) {
   
   if (biggestMerchant) {
     const avgPerTransaction = biggestMerchant.totalAmount / biggestMerchant.count;
-    funFacts.push(`You've visited ${biggestMerchant.merchant} ${biggestMerchant.count} times - that's $${avgPerTransaction.toFixed(2)} per visit!`);
+    funFacts.push(`You've visited ${biggestMerchant.merchant} ${biggestMerchant.count} times - that's $${avgPerTransaction.toLocaleString('en-US')} per visit!`);
   }
   
   if (totalSpending > 0) {
     const dailyAverage = totalSpending / 30;
-    funFacts.push(`You spend an average of $${dailyAverage.toFixed(2)} per day - that's like buying ${Math.round(dailyAverage / 5)} coffees daily!`);
+    funFacts.push(`You spend an average of $${dailyAverage.toLocaleString('en-US')} per day - that's like buying ${Math.round(dailyAverage / 5)} coffees daily!`);
   }
   
   if (savingsRate > 0) {
@@ -112,7 +112,7 @@ function generateInsightsDirectly(financialData: any) {
   }
   
   if (topCategory && (topCategory.amount / totalSpending) > 0.3) {
-    actionableRecommendations.push(`Reduce ${topCategory.category} spending by 20% - that's $${(topCategory.amount * 0.2).toFixed(2)} saved monthly!`);
+    actionableRecommendations.push(`Reduce ${topCategory.category} spending by 20% - that's $${(topCategory.amount * 0.2).toLocaleString('en-US')} saved monthly!`);
   }
   
   if (goals.length > 0) {

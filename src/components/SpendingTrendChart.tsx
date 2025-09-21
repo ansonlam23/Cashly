@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
+import { formatCurrency } from "@/lib/format";
 import { TrendingUp, TrendingDown, Calendar } from "lucide-react";
 
 interface TrendData {
@@ -28,7 +29,6 @@ export function SpendingTrendChart({ data, title, description, type = "line" }: 
     ? (trend / data[0].amount) * 100
     : 0;
 
-  const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
   const formatTooltip = (value: number, name: string) => [formatCurrency(value), "Amount"];
 
   return (

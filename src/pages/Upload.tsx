@@ -267,7 +267,7 @@ export default function Upload() {
                       <div>
                         <p className="text-[#f5f5f5] font-medium">{file.name}</p>
                         <p className="text-sm text-[#888]">
-                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                          {(file.size / 1024 / 1024).toLocaleString('en-US', { maximumFractionDigits: 2 })} MB
                         </p>
                       </div>
                       <div className="flex gap-2 justify-center">

@@ -35,7 +35,7 @@ export function LogoDropdown() {
         <Button variant="ghost" size="icon" className="h-10 w-10">
           <img
             src="/logo.svg"
-            alt="Logo"
+            alt="Cashly Logo"
             width={32}
             height={32}
             className="rounded-lg"

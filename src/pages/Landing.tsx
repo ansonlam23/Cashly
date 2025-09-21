@@ -95,9 +95,11 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-[#00ff88] to-[#0088ff] rounded-lg flex items-center justify-center">
-                <span className="text-[#0a0a0a] font-bold text-sm">M</span>
-              </div>
+              <img 
+                src="/logo.svg" 
+                alt="Cashly Logo" 
+                className="w-8 h-8"
+              />
               <span className="text-[#f5f5f5] font-bold text-xl">Cashly</span>
             </div>
             
@@ -339,9 +341,11 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="flex items-center gap-3 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-[#00ff88] to-[#0088ff] rounded-lg flex items-center justify-center">
-                <span className="text-[#0a0a0a] font-bold text-sm">M</span>
-              </div>
+              <img 
+                src="/logo.svg" 
+                alt="Cashly Logo" 
+                className="w-8 h-8"
+              />
               <span className="text-[#f5f5f5] font-bold text-xl">Cashly</span>
             </div>
             

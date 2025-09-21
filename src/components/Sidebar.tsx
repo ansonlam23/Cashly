@@ -42,9 +42,11 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-6 border-b border-[#333]">
-        <div className="w-8 h-8 bg-gradient-to-br from-[#00ff88] to-[#0088ff] rounded-lg flex items-center justify-center">
-          <span className="text-[#0a0a0a] font-bold text-sm">M</span>
-        </div>
+        <img 
+          src="/logo.svg" 
+          alt="Cashly Logo" 
+          className="w-8 h-8"
+        />
         <span className="text-[#f5f5f5] font-bold text-lg">Cashly</span>
       </div>
 

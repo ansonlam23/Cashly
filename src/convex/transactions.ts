@@ -564,3 +564,19 @@ export const addManualTransaction = mutation({
     });
   },
 });
+
+export const deleteTransaction = mutation({
+  args: { id: v.id("transactions") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    // Verify the transaction belongs to the user
+    const transaction = await ctx.db.get(args.id);
+    if (!transaction || transaction.userId !== user._id) {
+      throw new Error("Transaction not found or not authorized");
+    }
+
+    await ctx.db.delete(args.id);
+  },
+});

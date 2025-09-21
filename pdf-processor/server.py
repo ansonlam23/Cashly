@@ -27,15 +27,32 @@ def process_pdf():
         # Handle both base64 PDF data and plain text
         pdf_data_str = data['pdfData']
         
+        print(f"Received PDF data length: {len(pdf_data_str)}")
+        print(f"PDF data preview: {pdf_data_str[:100]}...")
+        
         # Try to decode as base64 first
         try:
             pdf_data = base64.b64decode(pdf_data_str)
-            # If successful, process as PDF
-            result = processor.process_pdf(pdf_data)
-        except:
+            print(f"Successfully decoded base64, PDF data length: {len(pdf_data)}")
+            print(f"PDF data starts with: {pdf_data[:20]}")
+            
+            # Check if it's a valid PDF
+            if not pdf_data.startswith(b'%PDF'):
+                print("Warning: Decoded data doesn't start with PDF header")
+                # Try to process as text anyway
+                pdf_data = pdf_data_str.encode('utf-8')
+                result = processor.process_pdf(pdf_data)
+            else:
+                # If successful, process as PDF
+                result = processor.process_pdf(pdf_data)
+            
+            print(f"Processing result: {result.get('success', False)}, transactions: {len(result.get('transactions', []))}")
+        except Exception as e:
+            print(f"Base64 decoding failed: {e}")
             # If base64 decoding fails, treat as plain text
             pdf_data = pdf_data_str.encode('utf-8')
             result = processor.process_pdf(pdf_data)
+            print(f"Processing as text, result: {result.get('success', False)}, transactions: {len(result.get('transactions', []))}")
         
         return jsonify(result)
         

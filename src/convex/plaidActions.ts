@@ -192,6 +192,7 @@ export const addCustomTransactionsAction = action({
   handler: async (ctx, args): Promise<{ success: boolean; transactionsCount: number; totalTransactions: number }> => {
     try {
       console.log('Adding custom transactions to database...');
+      console.log('User ID received:', args.userId);
       
       // Define custom transactions with diverse categories
       const customTransactions = [

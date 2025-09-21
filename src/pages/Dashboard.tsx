@@ -25,10 +25,12 @@ import {
 import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { SpendingChart } from "@/components/SpendingChart";
+import { IncomeVsSpendingChart } from "@/components/IncomeVsSpendingChart";
 import { TransactionsList } from "@/components/TransactionsList";
 import { GoalsOverview } from "@/components/GoalsOverview";
 import { InsightsPanel } from "@/components/InsightsPanel";
 import { PlaidLink } from "@/components/PlaidLink";
+import { AddTransactionForm } from "@/components/AddTransactionForm";
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated, user } = useAuth();
@@ -37,6 +39,7 @@ export default function Dashboard() {
   
   const transactions = useQuery(api.transactions.getTransactionsByUser, { limit: 10 });
   const spendingByCategory = useQuery(api.transactions.getSpendingByCategory);
+  const incomeVsSpending = useQuery(api.transactions.getIncomeVsSpending);
   const monthlyTrend = useQuery(api.transactions.getMonthlySpendingTrend, { months: 6 });
   const goals = useQuery(api.goals.getActiveGoals);
   const insights = useQuery(api.insights.getUnreadInsights);
@@ -47,6 +50,7 @@ export default function Dashboard() {
   const fetchTransactionsAction = useAction(api.plaidActions.fetchTransactionsAction);
   const testPlaidConnection = useAction(api.plaidActions.testPlaidConnectionAction);
   const addCustomTransactions = useAction(api.plaidActions.addCustomTransactionsAction);
+  const addManualTransaction = useMutation(api.transactions.addManualTransaction);
   const removePlaidItem = useMutation(api.plaidMutations.removePlaidItemFromDb);
   const saveTransactions = useMutation(api.plaidMutations.saveTransactions);
 
@@ -167,6 +171,8 @@ export default function Dashboard() {
       setFetchError(null);
 
       console.log('Adding custom transactions...');
+      console.log('User object:', user);
+      console.log('User ID:', user._id);
       const result = await addCustomTransactions({
         userId: user._id,
       });
@@ -177,6 +183,37 @@ export default function Dashboard() {
       console.error('Failed to add custom transactions:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setFetchError(`Failed to add custom transactions: ${errorMessage}`);
+    } finally {
+      setIsFetchingTransactions(false);
+    }
+  };
+
+  const handleAddManualTransaction = async (transaction: {
+    description: string;
+    amount: number;
+    category: string;
+    merchant: string;
+    date: string;
+    transactionType: "debit" | "credit";
+  }) => {
+    try {
+      setIsFetchingTransactions(true);
+      setFetchError(null);
+
+      await addManualTransaction({
+        date: transaction.date,
+        description: transaction.description,
+        amount: transaction.transactionType === "debit" ? -transaction.amount : transaction.amount,
+        category: transaction.category,
+        merchant: transaction.merchant,
+        transactionType: transaction.transactionType,
+      });
+
+      setFetchError("Transaction added successfully!");
+    } catch (error) {
+      console.error('Failed to add transaction:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setFetchError(`Failed to add transaction: ${errorMessage}`);
     } finally {
       setIsFetchingTransactions(false);
     }
@@ -254,23 +291,6 @@ export default function Dashboard() {
                         <>
                           <RefreshCw className="mr-2 h-4 w-4" />
                           Fetch Transactions
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      onClick={handleAddCustomTransactions}
-                      disabled={isFetchingTransactions}
-                      className="bg-[#ff8800] hover:bg-[#cc6600] text-white font-semibold"
-                    >
-                      {isFetchingTransactions ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Adding...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="mr-2 h-4 w-4" />
-                          Add Sample Data
                         </>
                       )}
                     </Button>
@@ -427,29 +447,37 @@ export default function Dashboard() {
               <TabsContent value="overview" className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <SpendingChart data={spendingByCategory || []} />
+                  <IncomeVsSpendingChart data={incomeVsSpending || { totalIncome: 0, totalSpending: 0 }} />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <AddTransactionForm 
+                    onAddTransaction={handleAddManualTransaction}
+                    isLoading={isFetchingTransactions}
+                  />
                   <TransactionsList transactions={transactions || []} />
                 </div>
               </TabsContent>
 
               <TabsContent value="analytics" className="space-y-6">
-                <div className="grid grid-cols-1 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <SpendingChart data={spendingByCategory || []} />
-                  {monthlyTrend && monthlyTrend.length > 0 && (
-                    <Card className="bg-[#111111] border-[#333]">
-                      <CardHeader>
-                        <CardTitle className="text-[#f5f5f5]">Monthly Spending Trend</CardTitle>
-                        <CardDescription className="text-[#888]">
-                          Your spending patterns over the last 6 months
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-[300px] flex items-center justify-center text-[#888]">
-                          Chart visualization would go here
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
+                  <IncomeVsSpendingChart data={incomeVsSpending || { totalIncome: 0, totalSpending: 0 }} />
                 </div>
+                {monthlyTrend && monthlyTrend.length > 0 && (
+                  <Card className="bg-[#111111] border-[#333]">
+                    <CardHeader>
+                      <CardTitle className="text-[#f5f5f5]">Monthly Spending Trend</CardTitle>
+                      <CardDescription className="text-[#888]">
+                        Your spending patterns over the last 6 months
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[300px] flex items-center justify-center text-[#888]">
+                        Chart visualization would go here
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="goals" className="space-y-6">

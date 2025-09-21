@@ -95,6 +95,34 @@ export const getMonthlySpendingTrend = query({
   },
 });
 
+export const getIncomeVsSpending = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return { totalIncome: 0, totalSpending: 0 };
+
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    let totalIncome = 0;
+    let totalSpending = 0;
+
+    for (const transaction of transactions) {
+      if (transaction.amount > 0) {
+        // Positive amounts are income
+        totalIncome += transaction.amount;
+      } else {
+        // Negative amounts are spending
+        totalSpending += Math.abs(transaction.amount);
+      }
+    }
+
+    return { totalIncome, totalSpending };
+  },
+});
+
 export const addTransaction = mutation({
   args: {
     statementId: v.id("bankStatements"),
@@ -105,6 +133,26 @@ export const addTransaction = mutation({
     merchant: v.optional(v.string()),
     transactionType: v.union(v.literal("debit"), v.literal("credit")),
     balance: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    return await ctx.db.insert("transactions", {
+      userId: user._id,
+      ...args,
+    });
+  },
+});
+
+export const addManualTransaction = mutation({
+  args: {
+    date: v.string(),
+    description: v.string(),
+    amount: v.number(),
+    category: v.string(),
+    merchant: v.optional(v.string()),
+    transactionType: v.union(v.literal("debit"), v.literal("credit")),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);

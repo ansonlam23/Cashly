@@ -136,14 +136,14 @@ class BankStatementProcessor:
         amount = float(amount_str.replace(',', ''))
         
         # Determine if it's a withdrawal or deposit
-        # Look for keywords that indicate withdrawal
-        withdrawal_keywords = ['bill', 'withdrawal', 'debit', 'payment', 'rent', 'electric', 'phone', 'internet', 'payroll', 'tax']
+        # Look for keywords that indicate withdrawal (money going out)
+        withdrawal_keywords = ['bill', 'withdrawal', 'debit', 'payment', 'rent', 'electric', 'phone', 'internet', 'tax', 'purchase', 'buy', 'spent', 'fee', 'charge', 'starbucks', 'amazon', 'target', 'spotify', 'gas', 'meijer', 'venmo', 'apple', 'store', 'subscription', 'transfer', 'groceries', 'supplies', 'textbooks', 'campus', 'coffee', 'restaurant', 'food', 'shopping']
         is_withdrawal = any(keyword in line.lower() for keyword in withdrawal_keywords)
         
         if is_withdrawal:
-            amount = -abs(amount)
+            amount = -abs(amount)  # Money going out = negative
         else:
-            amount = abs(amount)
+            amount = abs(amount)   # Money coming in = positive
         
         # Extract description (everything between date and first amount)
         date_end = date_match.end()

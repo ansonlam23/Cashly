@@ -83,28 +83,55 @@ const schema = defineSchema(
     // User financial goals and investment plans
     financialGoals: defineTable({
       userId: v.id("users"),
+      title: v.string(),
       goalType: v.union(
+        v.literal("emergency"),
+        v.literal("discretionary"),
+        v.literal("investment"),
+        v.literal("laptop"),
+        v.literal("bike"),
+        v.literal("travel"),
         v.literal("house"),
         v.literal("car"),
-        v.literal("emergency"),
-        v.literal("investment"),
+        v.literal("education"),
+        v.literal("retirement"),
         v.literal("general")
       ),
+      category: v.union(
+        v.literal("short_term"),
+        v.literal("medium_term"),
+        v.literal("long_term")
+      ),
+      priority: v.union(
+        v.literal("urgent"),
+        v.literal("fun"),
+        v.literal("dream")
+      ),
       targetAmount: v.number(),
-      currentAmount: v.optional(v.number()),
+      currentAmount: v.number(),
       targetDate: v.string(),
       monthlyContribution: v.optional(v.number()),
-      riskTolerance: v.union(
+      riskTolerance: v.optional(v.union(
         v.literal("conservative"),
         v.literal("moderate"),
         v.literal("aggressive"),
         v.literal("very_aggressive"),
         v.literal("ultra_aggressive")
-      ),
+      )),
       isActive: v.boolean(),
       description: v.optional(v.string()),
+      createdAt: v.number(),
+      lastUpdated: v.number(),
+      milestones: v.optional(v.array(v.object({
+        amount: v.number(),
+        description: v.string(),
+        achieved: v.boolean(),
+        achievedAt: v.optional(v.number())
+      }))),
     }).index("by_user", ["userId"])
-      .index("by_user_and_active", ["userId", "isActive"]),
+      .index("by_user_and_active", ["userId", "isActive"])
+      .index("by_user_and_category", ["userId", "category"])
+      .index("by_user_and_priority", ["userId", "priority"]),
 
     // AI-generated insights and recommendations
     insights: defineTable({

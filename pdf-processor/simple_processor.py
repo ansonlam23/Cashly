@@ -1,52 +1,22 @@
 #!/usr/bin/env python3
 """
-PDF Bank Statement Processor - Simple Version
-Extracts transactions from PDF bank statements
+Simple PDF processor that works with bank statements
 """
 
-import pdfplumber
-import pandas as pd
 import re
-import json
-import sys
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-import io
-import base64
 
-class BankStatementProcessor:
+class SimpleBankStatementProcessor:
     def __init__(self):
         self.date_pattern = r'\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?'
         self.amount_pattern = r'\$(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)'
         
-    def extract_text_from_pdf(self, pdf_data: bytes) -> str:
-        """Extract text from PDF bytes or plain text"""
-        try:
-            # First try to decode as plain text (for testing)
-            try:
-                text = pdf_data.decode('utf-8')
-                # If it looks like plain text (not PDF), return it
-                if not text.startswith('%PDF'):
-                    return text
-            except:
-                pass
-            
-            # If it's a real PDF, use pdfplumber
-            with pdfplumber.open(io.BytesIO(pdf_data)) as pdf:
-                text = ""
-                for page in pdf.pages:
-                    page_text = page.extract_text()
-                    if page_text:
-                        text += page_text + "\n"
-                return text
-        except Exception as e:
-            raise Exception(f"Error extracting text from PDF: {str(e)}")
-
     def process_pdf(self, pdf_data: bytes) -> Dict[str, Any]:
         """Process PDF and extract transactions"""
         try:
             # Extract text
-            text = self.extract_text_from_pdf(pdf_data)
+            text = pdf_data.decode('utf-8')
             
             # Find transaction lines
             lines = text.split('\n')
@@ -73,17 +43,6 @@ class BankStatementProcessor:
             total_expenses = sum(abs(t['amount']) for t in transactions if t['amount'] < 0)
             net_flow = total_income - total_expenses
             
-            # Get unique merchants
-            merchants = list(set(t['merchant'] for t in transactions if t['merchant']))
-            
-            # Get category breakdown
-            categories = {}
-            for transaction in transactions:
-                category = transaction['category']
-                if category not in categories:
-                    categories[category] = 0
-                categories[category] += abs(transaction['amount'])
-            
             return {
                 'success': True,
                 'transactions': transactions,
@@ -92,8 +51,8 @@ class BankStatementProcessor:
                     'totalIncome': total_income,
                     'totalExpenses': total_expenses,
                     'netFlow': net_flow,
-                    'uniqueMerchants': len(merchants),
-                    'categories': categories
+                    'uniqueMerchants': len(set(t['merchant'] for t in transactions)),
+                    'categories': {}
                 },
                 'metadata': {
                     'processedAt': datetime.now().isoformat(),
@@ -209,26 +168,34 @@ class BankStatementProcessor:
         else:
             return 'Other'
 
-def main():
-    """Main function for command line usage"""
-    if len(sys.argv) != 2:
-        print("Usage: python pdf_processor.py <pdf_file>")
-        sys.exit(1)
-    
-    pdf_file = sys.argv[1]
-    
-    try:
-        with open(pdf_file, 'rb') as f:
-            pdf_data = f.read()
-        
-        processor = BankStatementProcessor()
-        result = processor.process_pdf(pdf_data)
-        
-        print(json.dumps(result, indent=2))
-        
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
-
 if __name__ == "__main__":
-    main()
+    # Test the processor
+    processor = SimpleBankStatementProcessor()
+    
+    test_data = """
+    DATE        DESCRIPTION                    WITHDRAWAL    DEPOSIT    BALANCE
+    06/01       Rent Bill                      $670.00                  $33,902.23
+    06/03       Check No. 3456, Payment from Nala Spencer    $740.00   $34,642.23
+    06/08       Electric Bill                  $347.85                  $34,294.38
+    06/13       Phone Bill                     $75.45                   $34,218.93
+    06/15       Deposit                                        $7,245.00 $41,463.93
+    06/18       Debit Transaction, Photography Tools Warehouse $339.96  $41,123.97
+    06/24       Deposit                                        $3,255.00 $44,378.97
+    06/25       Internet Bill                  $88.88                   $44,290.09
+    06/28       Check No. 0231, Payment from Kyubi Tayler    $935.00   $45,225.09
+    06/29       Payroll Run                    $6,493.65                $38,731.44
+    06/30       Debit Transaction, Picture Perfect Equipments $1,234.98 $37,496.46
+    06/30       Interest Earned                                $18.75    $37,515.21
+    06/30       Withholding Tax                $3.75                    $37,511.46
+    """
+    
+    result = processor.process_pdf(test_data.encode('utf-8'))
+    
+    print("Simple Processor Test:")
+    print(f"Success: {result['success']}")
+    print(f"Transactions found: {len(result['transactions'])}")
+    
+    if result['transactions']:
+        print("\nFirst 5 transactions:")
+        for i, tx in enumerate(result['transactions'][:5]):
+            print(f"  {i+1}. {tx['date']} - {tx['description']} - ${tx['amount']} ({tx['category']})")

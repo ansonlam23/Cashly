@@ -8,6 +8,7 @@ from flask import Flask, request, jsonify
 from pdf_processor import BankStatementProcessor
 import base64
 import io
+import os
 
 app = Flask(__name__)
 processor = BankStatementProcessor()
@@ -23,11 +24,18 @@ def process_pdf():
                 'error': 'No PDF data provided'
             }), 400
         
-        # Decode base64 PDF data
-        pdf_data = base64.b64decode(data['pdfData'])
+        # Handle both base64 PDF data and plain text
+        pdf_data_str = data['pdfData']
         
-        # Process the PDF
-        result = processor.process_pdf(pdf_data)
+        # Try to decode as base64 first
+        try:
+            pdf_data = base64.b64decode(pdf_data_str)
+            # If successful, process as PDF
+            result = processor.process_pdf(pdf_data)
+        except:
+            # If base64 decoding fails, treat as plain text
+            pdf_data = pdf_data_str.encode('utf-8')
+            result = processor.process_pdf(pdf_data)
         
         return jsonify(result)
         
@@ -43,4 +51,5 @@ def health():
     return jsonify({'status': 'healthy'})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    port = int(os.environ.get('PORT', 5001))
+    app.run(host='0.0.0.0', port=port, debug=False)

@@ -82,4 +82,8 @@ Student-focused usability
 - Support for **crypto & retirement planning**  
 - Enhanced **mobile functionality**  
 - Improved **PDF processing**  
-- **Gamification** to bo
+- **Gamification** to boost engagement  
+- Scaling to support more users and banking systems with modular microservices
+
+*Cashly turns finance from overwhelming to empowering — giving students the tools, insights, and motivation to take control of their money.*  
+

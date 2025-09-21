@@ -48,6 +48,40 @@ class FinancialInsightsAI:
         
         return insights
     
+    def generate_investment_insights(self, financial_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate AI insights for investment portfolio"""
+        
+        # Extract investment data
+        investments = financial_data.get('investments', [])
+        portfolio_summary = financial_data.get('portfolioSummary', {})
+        
+        # Calculate key metrics
+        total_value = portfolio_summary.get('totalValue', 0)
+        total_gain_loss = portfolio_summary.get('totalGainLoss', 0)
+        total_gain_loss_percent = portfolio_summary.get('totalGainLossPercent', 0)
+        day_change = portfolio_summary.get('dayChange', 0)
+        investment_count = portfolio_summary.get('investmentCount', 0)
+        
+        # Find best and worst performers
+        if investments:
+            sorted_investments = sorted(investments, key=lambda x: x.get('totalGainLossPercent', 0), reverse=True)
+            best_performer = sorted_investments[0]
+            worst_performer = sorted_investments[-1]
+        else:
+            best_performer = None
+            worst_performer = None
+        
+        # Create the investment prompt
+        prompt = self._create_investment_prompt(
+            total_value, total_gain_loss, total_gain_loss_percent, day_change,
+            investment_count, investments, best_performer, worst_performer
+        )
+        
+        # Generate insights using Ollama
+        insights = self._call_ollama(prompt)
+        
+        return insights
+    
     def _create_prompt(self, total_income: float, total_spending: float, net_flow: float, 
                       current_balance: float, top_categories: List[Dict], 
                       top_merchants: List[Dict], goals: List[Dict], 
@@ -131,6 +165,86 @@ Please provide insights in this JSON format:
 }}
 
 Keep it fun, relatable, and student-friendly. Use emojis sparingly. Make jokes about relatable college experiences. Be encouraging but honest about spending habits."""
+
+        return prompt
+    
+    def _create_investment_prompt(self, total_value: float, total_gain_loss: float, 
+                                 total_gain_loss_percent: float, day_change: float,
+                                 investment_count: int, investments: List[Dict],
+                                 best_performer: Dict, worst_performer: Dict) -> str:
+        """Create a detailed prompt for investment analysis"""
+        
+        # Format investment data
+        investment_text = ""
+        for i, inv in enumerate(investments[:5], 1):  # Top 5 investments
+            symbol = inv.get('symbol', 'Unknown')
+            shares = inv.get('shares', 0)
+            current_price = inv.get('currentPrice', 0)
+            total_value_inv = inv.get('totalValue', 0)
+            gain_loss = inv.get('totalGainLoss', 0)
+            gain_loss_percent = inv.get('totalGainLossPercent', 0)
+            day_change_percent = inv.get('dayChangePercent', 0)
+            
+            investment_text += f"{i}. {symbol}: {shares} shares @ ${current_price:.2f} = ${total_value_inv:,.2f} ({gain_loss_percent:+.1f}% total, {day_change_percent:+.1f}% today)\n"
+        
+        # Best/worst performer info
+        performer_text = ""
+        if best_performer:
+            performer_text += f"BEST: {best_performer.get('symbol', 'N/A')} (+{best_performer.get('totalGainLossPercent', 0):.1f}%)\n"
+        if worst_performer and worst_performer != best_performer:
+            performer_text += f"WORST: {worst_performer.get('symbol', 'N/A')} ({worst_performer.get('totalGainLossPercent', 0):.1f}%)\n"
+        
+        prompt = f"""You are a fun, witty investment advisor for college students. Analyze this investment portfolio and provide insights with humor and actionable advice.
+
+PORTFOLIO DATA:
+- Total Portfolio Value: ${total_value:,.2f}
+- Total Gain/Loss: ${total_gain_loss:,.2f} ({total_gain_loss_percent:+.1f}%)
+- Day Change: ${day_change:,.2f}
+- Number of Holdings: {investment_count}
+
+INVESTMENT HOLDINGS:
+{investment_text}
+
+PERFORMANCE:
+{performer_text}
+
+Please provide insights in this JSON format:
+{{
+  "portfolioHighlights": {{
+    "bestPerformer": "Witty comment about your best performing stock",
+    "worstPerformer": "Humorous observation about your worst performing stock",
+    "diversificationAlert": "Funny comment about portfolio diversification",
+    "riskAssessment": "Witty assessment of portfolio risk level"
+  }},
+  "stockInsights": [
+    {{
+      "symbol": "AAPL",
+      "insight": "Humorous insight about this specific stock",
+      "suggestion": "Actionable tip for this stock",
+      "performance": "Funny performance summary"
+    }}
+  ],
+  "portfolioAnalysis": [
+    {{
+      "type": "performance",
+      "message": "Witty analysis of overall portfolio performance",
+      "actionable": "Specific step to improve portfolio"
+    }}
+  ],
+  "funFacts": [
+    "Humorous observation about the portfolio",
+    "Light-hearted comparison or joke about investing"
+  ],
+  "actionableRecommendations": [
+    {{
+      "roast": "Funny roast about a specific investment decision",
+      "recommendation": "Specific, actionable advice",
+      "impact": "Expected impact of following the recommendation"
+    }}
+  ]
+}}
+
+Keep it fun, relatable, and student-friendly. Use emojis sparingly. Make jokes about relatable college investing experiences. Be encouraging but honest about investment decisions. Focus on education and building good investing habits."""
 
         return prompt
     

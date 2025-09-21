@@ -13,48 +13,70 @@ import {
   RefreshCw,
   Sparkles,
   DollarSign,
-  Calendar,
-  Zap
+  BarChart3,
+  Zap,
+  PieChart,
+  Activity
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "@/convex/_generated/api";
 import { useAction } from "convex/react";
 
-interface AIInsightsData {
-  spendingHighlights: {
-    biggestExpense: string;
-    overspendingAlert: string;
-    positiveReinforcement: string;
+interface InvestmentAIInsightsData {
+  portfolioHighlights: {
+    bestPerformer: string;
+    worstPerformer: string;
+    diversificationAlert: string;
+    riskAssessment: string;
   };
-  categoryInsights: Array<{
-    category: string;
+  stockInsights: Array<{
+    symbol: string;
     insight: string;
     suggestion: string;
+    performance: string;
   }>;
-  predictions: Array<{
+  portfolioAnalysis: Array<{
     type: string;
     message: string;
     actionable: string;
   }>;
   funFacts: string[];
-  actionableRecommendations: string[];
+  actionableRecommendations: Array<string | { roast: string; recommendation: string; impact: string }>;
 }
 
-export function AIInsights() {
-  const [insights, setInsights] = useState<AIInsightsData | null>(null);
+interface InvestmentAIInsightsProps {
+  portfolioSummary: any;
+  investments: any[];
+}
+
+export function InvestmentAIInsights({ portfolioSummary, investments }: InvestmentAIInsightsProps) {
+  const [insights, setInsights] = useState<InvestmentAIInsightsData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   
-  const generateInsights = useAction(api.aiInsights.generateAIInsights);
+  const generateInvestmentInsights = useAction(api.aiInsights.generateInvestmentInsights);
 
   const loadInsights = async (isRefresh = false) => {
+    if (!portfolioSummary) {
+      setError("No portfolio data available");
+      return;
+    }
+    
+    if (!investments || !Array.isArray(investments)) {
+      setError("No investment data available");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     
     try {
-      const result = await generateInsights();
-      setInsights(result as AIInsightsData);
+      const result = await generateInvestmentInsights({
+        portfolioSummary,
+        investments
+      });
+      setInsights(result as InvestmentAIInsightsData);
       setLastRefresh(new Date());
       
       if (isRefresh) {
@@ -62,15 +84,17 @@ export function AIInsights() {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate insights');
+      setError(err instanceof Error ? err.message : 'Failed to generate investment insights');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadInsights();
-  }, []);
+    if (portfolioSummary && investments) {
+      loadInsights();
+    }
+  }, [portfolioSummary, investments]);
 
   if (isLoading) {
     return (
@@ -78,17 +102,17 @@ export function AIInsights() {
         <CardHeader>
           <CardTitle className="text-[#f5f5f5] flex items-center gap-2">
             <Brain className="h-5 w-5" />
-            AI Financial Insights
+            AI Investment Insights
           </CardTitle>
           <CardDescription className="text-[#888]">
-            Your personal financial coach is analyzing your data...
+            Your personal investment advisor is analyzing your portfolio...
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <RefreshCw className="h-8 w-8 animate-spin text-[#00ff88] mx-auto mb-4" />
-              <p className="text-[#888]">Generating personalized insights...</p>
+              <p className="text-[#888]">Analyzing your investment portfolio...</p>
             </div>
           </div>
         </CardContent>
@@ -111,10 +135,10 @@ export function AIInsights() {
                 <div>
                   <CardTitle className="text-[#00ff88] flex items-center gap-2">
                     <Brain className="h-6 w-6" />
-                    AI Financial Insights
+                    AI Investment Insights
                   </CardTitle>
                   <CardDescription className="text-[#888]">
-                    Your personal financial coach with personality! 🤖
+                    Your personal investment advisor with personality! 📈
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-3">
@@ -126,7 +150,7 @@ export function AIInsights() {
                     {isLoading ? (
                       <>
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Generating...
+                        Analyzing...
                       </>
                     ) : (
                       <>
@@ -146,7 +170,7 @@ export function AIInsights() {
           <CardHeader>
             <CardTitle className="text-[#ff0080] flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
-              AI Insights Error
+              Investment Insights Error
             </CardTitle>
             <CardDescription className="text-[#888]">
               Something went wrong while generating insights
@@ -163,7 +187,7 @@ export function AIInsights() {
                 {isLoading ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
+                    Analyzing...
                   </>
                 ) : (
                   <>
@@ -194,10 +218,10 @@ export function AIInsights() {
                 <div>
                   <CardTitle className="text-[#00ff88] flex items-center gap-2">
                     <Brain className="h-6 w-6" />
-                    AI Financial Insights
+                    AI Investment Insights
                   </CardTitle>
                   <CardDescription className="text-[#888]">
-                    Your personal financial coach with personality! 🤖
+                    Your personal investment advisor with personality! 📈
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-3">
@@ -209,7 +233,7 @@ export function AIInsights() {
                     {isLoading ? (
                       <>
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Generating...
+                        Analyzing...
                       </>
                     ) : (
                       <>
@@ -229,10 +253,10 @@ export function AIInsights() {
           <CardHeader>
             <CardTitle className="text-[#f5f5f5] flex items-center gap-2">
               <Brain className="h-5 w-5" />
-              No Insights Available
+              No Investment Data
             </CardTitle>
             <CardDescription className="text-[#888]">
-              Add some transactions to get started!
+              Add some investments to get started!
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -245,7 +269,7 @@ export function AIInsights() {
                 {isLoading ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
+                    Analyzing...
                   </>
                 ) : (
                   <>
@@ -275,10 +299,10 @@ export function AIInsights() {
               <div>
                 <CardTitle className="text-[#00ff88] flex items-center gap-2">
                   <Brain className="h-6 w-6" />
-                  AI Financial Insights
+                  AI Investment Insights
                 </CardTitle>
                 <CardDescription className="text-[#888]">
-                  Your personal financial coach with personality! 🤖
+                  Your personal investment advisor with personality! 📈
                   {lastRefresh && (
                     <span className="block text-xs mt-1">
                       Last updated: {lastRefresh.toLocaleTimeString()}
@@ -295,7 +319,7 @@ export function AIInsights() {
                   {isLoading ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
+                      Analyzing...
                     </>
                   ) : (
                     <>
@@ -310,20 +334,30 @@ export function AIInsights() {
         </Card>
       </motion.div>
 
-      {/* Spending Highlights */}
+      {/* Portfolio Highlights */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
       >
+        <Card className="bg-[#111111] border-[#00ff88]">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="h-5 w-5 text-[#00ff88]" />
+              <span className="font-semibold text-[#f5f5f5]">Best Performer</span>
+            </div>
+            <p className="text-sm text-[#888]">{insights.portfolioHighlights.bestPerformer}</p>
+          </CardContent>
+        </Card>
+
         <Card className="bg-[#111111] border-[#ff0080]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingDown className="h-5 w-5 text-[#ff0080]" />
-              <span className="font-semibold text-[#f5f5f5]">Biggest Expense</span>
+              <span className="font-semibold text-[#f5f5f5]">Worst Performer</span>
             </div>
-            <p className="text-sm text-[#888]">{insights.spendingHighlights.biggestExpense}</p>
+            <p className="text-sm text-[#888]">{insights.portfolioHighlights.worstPerformer}</p>
           </CardContent>
         </Card>
 
@@ -331,24 +365,24 @@ export function AIInsights() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="h-5 w-5 text-[#ffaa00]" />
-              <span className="font-semibold text-[#f5f5f5]">Alert</span>
+              <span className="font-semibold text-[#f5f5f5]">Diversification</span>
             </div>
-            <p className="text-sm text-[#888]">{insights.spendingHighlights.overspendingAlert}</p>
+            <p className="text-sm text-[#888]">{insights.portfolioHighlights.diversificationAlert}</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#111111] border-[#00ff88]">
+        <Card className="bg-[#111111] border-[#0088ff]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="h-5 w-5 text-[#00ff88]" />
-              <span className="font-semibold text-[#f5f5f5]">Good Job!</span>
+              <Activity className="h-5 w-5 text-[#0088ff]" />
+              <span className="font-semibold text-[#f5f5f5]">Risk Level</span>
             </div>
-            <p className="text-sm text-[#888]">{insights.spendingHighlights.positiveReinforcement}</p>
+            <p className="text-sm text-[#888]">{insights.portfolioHighlights.riskAssessment}</p>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Category Insights */}
+      {/* Stock Insights */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -357,16 +391,16 @@ export function AIInsights() {
         <Card className="bg-[#111111] border-[#333]">
           <CardHeader>
             <CardTitle className="text-[#f5f5f5] flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Category Insights
+              <BarChart3 className="h-5 w-5" />
+              Stock Analysis
             </CardTitle>
             <CardDescription className="text-[#888]">
-              What your spending categories are telling you
+              Individual stock performance and insights
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {insights.categoryInsights.map((insight, index) => (
+              {insights.stockInsights.map((insight, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
@@ -376,11 +410,12 @@ export function AIInsights() {
                 >
                   <div className="flex items-start gap-3">
                     <Badge className="bg-[#00ff88] text-black">
-                      {insight.category}
+                      {insight.symbol}
                     </Badge>
                     <div className="flex-1">
                       <p className="text-[#f5f5f5] font-medium mb-2">{insight.insight}</p>
-                      <p className="text-sm text-[#888]">{insight.suggestion}</p>
+                      <p className="text-sm text-[#888] mb-2">{insight.suggestion}</p>
+                      <p className="text-xs text-[#00ff88] font-medium">{insight.performance}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -390,7 +425,7 @@ export function AIInsights() {
         </Card>
       </motion.div>
 
-      {/* Predictions */}
+      {/* Portfolio Analysis */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -399,16 +434,16 @@ export function AIInsights() {
         <Card className="bg-[#111111] border-[#0088ff]">
           <CardHeader>
             <CardTitle className="text-[#0088ff] flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Future Predictions
+              <PieChart className="h-5 w-5" />
+              Portfolio Analysis
             </CardTitle>
             <CardDescription className="text-[#888]">
-              What your current patterns mean for the future
+              Overall portfolio health and recommendations
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {insights.predictions.map((prediction, index) => (
+              {insights.portfolioAnalysis.map((analysis, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
@@ -416,9 +451,9 @@ export function AIInsights() {
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                   className="p-4 bg-[#1a1a1a] rounded-lg border border-[#0088ff]/30"
                 >
-                  <p className="text-[#f5f5f5] font-medium mb-2">{prediction.message}</p>
+                  <p className="text-[#f5f5f5] font-medium mb-2">{analysis.message}</p>
                   <p className="text-sm text-[#888]">
-                    <strong>Action:</strong> {prediction.actionable}
+                    <strong>Action:</strong> {analysis.actionable}
                   </p>
                 </motion.div>
               ))}
@@ -437,10 +472,10 @@ export function AIInsights() {
           <CardHeader>
             <CardTitle className="text-[#ff0080] flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
-              Fun Facts
+              Investment Fun Facts
             </CardTitle>
             <CardDescription className="text-[#888]">
-              Light-hearted observations about your spending
+              Interesting observations about your portfolio
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -471,10 +506,10 @@ export function AIInsights() {
           <CardHeader>
             <CardTitle className="text-[#00ff88] flex items-center gap-2">
               <Zap className="h-5 w-5" />
-              Actionable Recommendations
+              Investment Recommendations
             </CardTitle>
             <CardDescription className="text-[#888]">
-              Specific steps you can take to improve your financial health
+              Specific steps to optimize your investment strategy
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -528,7 +563,7 @@ export function AIInsights() {
                         <div className="w-6 h-6 bg-[#00ff88] rounded-full flex items-center justify-center text-black font-bold text-sm">
                           {index + 1}
                         </div>
-                        <p className="text-[#f5f5f5] flex-1">{recommendation}</p>
+                        <p className="text-[#f5f5f5] flex-1">{String(recommendation)}</p>
                       </div>
                     )}
                   </motion.div>

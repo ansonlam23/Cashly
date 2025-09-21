@@ -168,6 +168,36 @@ const schema = defineSchema(
     }).index("by_user", ["userId"])
       .index("by_user_and_month", ["userId", "month"])
       .index("by_user_category_month", ["userId", "category", "month"]),
+
+    // Investment portfolio holdings
+    investments: defineTable({
+      userId: v.id("users"),
+      symbol: v.string(), // Stock ticker (AAPL, TSLA, etc.)
+      shares: v.number(), // Number of shares owned
+      averageCost: v.number(), // Average cost per share
+      currentPrice: v.number(), // Current market price
+      dayChange: v.number(), // Daily price change
+      dayChangePercent: v.number(), // Daily percentage change
+      totalValue: v.number(), // shares * currentPrice
+      totalGainLoss: v.number(), // (currentPrice - averageCost) * shares
+      totalGainLossPercent: v.number(), // Percentage gain/loss
+      lastUpdated: v.number(), // Timestamp of last price update
+      addedDate: v.number(), // When the investment was added
+    }).index("by_user", ["userId"])
+      .index("by_user_and_symbol", ["userId", "symbol"]),
+
+    // Historical stock price data for charts
+    stockPrices: defineTable({
+      symbol: v.string(),
+      date: v.string(), // YYYY-MM-DD format
+      open: v.number(),
+      high: v.number(),
+      low: v.number(),
+      close: v.number(),
+      volume: v.number(),
+      timestamp: v.number(),
+    }).index("by_symbol", ["symbol"])
+      .index("by_symbol_and_date", ["symbol", "date"]),
   },
   {
     schemaValidation: false,

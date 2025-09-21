@@ -16,6 +16,7 @@ import Analytics from "@/pages/Analytics.tsx";
 import Goals from "@/pages/Goals.tsx";
 import Trends from "@/pages/Trends.tsx";
 import Insights from "@/pages/Insights.tsx";
+import Investments from "@/pages/Investments.tsx";
 import Upload from "@/pages/Upload.tsx";
 import Transactions from "@/pages/Transactions.tsx";
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -61,6 +62,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/goals" element={<Goals />} />
             <Route path="/trends" element={<Trends />} />
             <Route path="/insights" element={<Insights />} />
+            <Route path="/investments" element={<Investments />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="*" element={<NotFound />} />

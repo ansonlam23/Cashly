@@ -10,7 +10,8 @@ import {
   LogOut,
   TrendingUp,
   Lightbulb,
-  Receipt
+  Receipt,
+  BarChart3
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router";
 import { motion } from "framer-motion";
@@ -20,6 +21,7 @@ const navigation = [
   { name: "Analytics", href: "/analytics", icon: PieChart },
   { name: "Goals", href: "/goals", icon: Target },
   { name: "Insights", href: "/insights", icon: Lightbulb },
+  { name: "Investments", href: "/investments", icon: BarChart3 },
   { name: "Transactions", href: "/transactions", icon: Receipt },
   { name: "Upload", href: "/upload", icon: Upload },
   { name: "Trends", href: "/trends", icon: TrendingUp },

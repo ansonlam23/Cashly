@@ -19,6 +19,7 @@ import type * as bankStatements from "../bankStatements.js";
 import type * as goals from "../goals.js";
 import type * as http from "../http.js";
 import type * as insights from "../insights.js";
+import type * as investments from "../investments.js";
 import type * as pdfUpload from "../pdfUpload.js";
 import type * as plaidActions from "../plaidActions.js";
 import type * as plaidMutations from "../plaidMutations.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   goals: typeof goals;
   http: typeof http;
   insights: typeof insights;
+  investments: typeof investments;
   pdfUpload: typeof pdfUpload;
   plaidActions: typeof plaidActions;
   plaidMutations: typeof plaidMutations;

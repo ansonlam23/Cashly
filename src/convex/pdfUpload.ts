@@ -11,7 +11,7 @@ export const processPDFUpload = action({
   handler: async (ctx, args) => {
     try {
       // Call the PDF processing service via ngrok
-      const response = await fetch('https://c91ae5dc5db6.ngrok-free.app/process-pdf', {
+      const response = await fetch('https://28f179779a74.ngrok-free.app/process-pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

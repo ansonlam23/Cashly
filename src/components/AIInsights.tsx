@@ -44,16 +44,23 @@ export function AIInsights() {
   const [insights, setInsights] = useState<AIInsightsData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   
   const generateInsights = useAction(api.aiInsights.generateAIInsights);
 
-  const loadInsights = async () => {
+  const loadInsights = async (isRefresh = false) => {
     setIsLoading(true);
     setError(null);
     
     try {
       const result = await generateInsights();
       setInsights(result as AIInsightsData);
+      setLastRefresh(new Date());
+      
+      if (isRefresh) {
+        // Add a small delay to show the refresh animation
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate insights');
     } finally {
@@ -91,56 +98,166 @@ export function AIInsights() {
 
   if (error) {
     return (
-      <Card className="bg-[#111111] border-[#ff0080]">
-        <CardHeader>
-          <CardTitle className="text-[#ff0080] flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            AI Insights Error
-          </CardTitle>
-          <CardDescription className="text-[#888]">
-            Something went wrong while generating insights
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-[#888] mb-4">{error}</p>
-            <Button 
-              onClick={loadInsights}
-              className="bg-[#00ff88] hover:bg-[#00cc6a] text-black"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        {/* Header with refresh button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="bg-[#111111] border-[#00ff88]">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-[#00ff88] flex items-center gap-2">
+                    <Brain className="h-6 w-6" />
+                    AI Financial Insights
+                  </CardTitle>
+                  <CardDescription className="text-[#888]">
+                    Your personal financial coach with personality! 🤖
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button 
+                    onClick={() => loadInsights(true)}
+                    disabled={isLoading}
+                    className="bg-[#00ff88] hover:bg-[#00cc6a] text-black font-semibold"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Get New Insights
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        </motion.div>
+
+        {/* Error Card */}
+        <Card className="bg-[#111111] border-[#ff0080]">
+          <CardHeader>
+            <CardTitle className="text-[#ff0080] flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              AI Insights Error
+            </CardTitle>
+            <CardDescription className="text-[#888]">
+              Something went wrong while generating insights
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <p className="text-[#888] mb-4">{error}</p>
+              <Button 
+                onClick={() => loadInsights(true)}
+                disabled={isLoading}
+                className="bg-[#00ff88] hover:bg-[#00cc6a] text-black"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Try Again
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (!insights) {
     return (
-      <Card className="bg-[#111111] border-[#333]">
-        <CardHeader>
-          <CardTitle className="text-[#f5f5f5] flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            AI Financial Insights
-          </CardTitle>
-          <CardDescription className="text-[#888]">
-            No insights available. Add some transactions to get started!
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <Button 
-              onClick={loadInsights}
-              className="bg-[#00ff88] hover:bg-[#00cc6a] text-black"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Generate Insights
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        {/* Header with refresh button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="bg-[#111111] border-[#00ff88]">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-[#00ff88] flex items-center gap-2">
+                    <Brain className="h-6 w-6" />
+                    AI Financial Insights
+                  </CardTitle>
+                  <CardDescription className="text-[#888]">
+                    Your personal financial coach with personality! 🤖
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button 
+                    onClick={() => loadInsights(true)}
+                    disabled={isLoading}
+                    className="bg-[#00ff88] hover:bg-[#00cc6a] text-black font-semibold"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Get New Insights
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        </motion.div>
+
+        {/* No Insights Card */}
+        <Card className="bg-[#111111] border-[#333]">
+          <CardHeader>
+            <CardTitle className="text-[#f5f5f5] flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              No Insights Available
+            </CardTitle>
+            <CardDescription className="text-[#888]">
+              Add some transactions to get started!
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <Button 
+                onClick={() => loadInsights(true)}
+                disabled={isLoading}
+                className="bg-[#00ff88] hover:bg-[#00cc6a] text-black"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Insights
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -162,17 +279,32 @@ export function AIInsights() {
                 </CardTitle>
                 <CardDescription className="text-[#888]">
                   Your personal financial coach with personality! 🤖
+                  {lastRefresh && (
+                    <span className="block text-xs mt-1">
+                      Last updated: {lastRefresh.toLocaleTimeString()}
+                    </span>
+                  )}
                 </CardDescription>
               </div>
-              <Button 
-                onClick={loadInsights}
-                variant="outline"
-                size="sm"
-                className="border-[#00ff88] text-[#00ff88] hover:bg-[#00ff88] hover:text-black"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button 
+                  onClick={() => loadInsights(true)}
+                  disabled={isLoading}
+                  className="bg-[#00ff88] hover:bg-[#00cc6a] text-black font-semibold"
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Get New Insights
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardHeader>
         </Card>

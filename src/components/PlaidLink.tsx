@@ -4,6 +4,7 @@ import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Link, CheckCircle } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 interface PlaidLinkProps {
   onSuccess?: () => void;
@@ -13,6 +14,7 @@ export function PlaidLink({ onSuccess }: PlaidLinkProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
   const createSandboxPublicToken = useAction(api.plaidActions.createSandboxPublicTokenAction);
   const exchangePublicToken = useAction(api.plaidActions.exchangePublicTokenAction);
@@ -91,9 +93,17 @@ export function PlaidLink({ onSuccess }: PlaidLinkProps) {
   return (
     <Card className="bg-[#111111] border-[#333]">
       <CardHeader>
-        <CardTitle className="text-[#f5f5f5]">Connect Your Bank Account (Sandbox)</CardTitle>
+        <CardTitle className="text-[#f5f5f5]">
+          {isAuthenticated 
+            ? "Connect Your Bank Account (via Plaid)"
+            : "Connect Your Bank Account (Sandbox)"
+          }
+        </CardTitle>
         <CardDescription className="text-[#888]">
-          Connect a test bank account using Plaid's sandbox environment to fetch and analyze transactions
+          {isAuthenticated 
+            ? "Securely link your real bank account through Plaid to fetch, categorize, and analyze transactions in real time."
+            : "Connect a test bank account using Plaid's sandbox environment to fetch and analyze transactions"
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -116,7 +126,10 @@ export function PlaidLink({ onSuccess }: PlaidLinkProps) {
           ) : (
             <>
               <Link className="mr-2 h-4 w-4" />
-              Connect Bank Account (Sandbox)
+              {isAuthenticated 
+                ? "Connect Bank Account (via Plaid)"
+                : "Connect Bank Account (Sandbox)"
+              }
             </>
           )}
         </Button>

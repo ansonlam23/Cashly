@@ -40,6 +40,11 @@ export default function Dashboard() {
   const { isLoading, isAuthenticated, user } = useAuth();
   const [isFetchingTransactions, setIsFetchingTransactions] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<{
+    type: 'success' | 'error' | 'info' | null;
+    message: string;
+    details?: string;
+  }>({ type: null, message: '' });
   
   const transactions = useQuery(api.transactions.getTransactionsByUser, { limit: 10 });
   const spendingByCategory = useQuery(api.transactions.getSpendingByCategory);
@@ -63,13 +68,18 @@ export default function Dashboard() {
 
   const handleFetchTransactions = async () => {
     if (!plaidAccessToken || !user) {
-      setFetchError("No Plaid account connected. Please connect your bank account first.");
+      setConnectionStatus({
+        type: 'error',
+        message: 'No bank account connected',
+        details: 'Please connect your bank account first to fetch transactions.'
+      });
       return;
     }
 
     try {
       setIsFetchingTransactions(true);
       setFetchError(null);
+      setConnectionStatus({ type: null, message: '' });
 
       console.log('Starting transaction fetch...');
       console.log('Access token:', plaidAccessToken?.substring(0, 10) + '...');
@@ -83,7 +93,11 @@ export default function Dashboard() {
       console.log('Fetched transactions from Plaid:', plaidTransactions?.length || 0);
 
       if (!plaidTransactions || plaidTransactions.length === 0) {
-        setFetchError('No transactions found. This might be normal for a new sandbox account.');
+        setConnectionStatus({
+          type: 'info',
+          message: 'ℹ️ No Transactions Found',
+          details: 'This might be normal for a new sandbox account. Try connecting a different test account.'
+        });
         return;
       }
 
@@ -102,10 +116,19 @@ export default function Dashboard() {
       });
 
       console.log(`Successfully fetched and saved ${result.transactionsCount} new transactions`);
+      setConnectionStatus({
+        type: 'success',
+        message: '🎉 Transactions Fetched Successfully!',
+        details: `Found and saved ${result.transactionsCount} new transaction${result.transactionsCount !== 1 ? 's' : ''} from your bank account.`
+      });
     } catch (error) {
       console.error('Failed to fetch transactions:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setFetchError(`Failed to fetch transactions: ${errorMessage}`);
+      setConnectionStatus({
+        type: 'error',
+        message: '❌ Fetch Failed',
+        details: `Failed to fetch transactions: ${errorMessage}`
+      });
     } finally {
       setIsFetchingTransactions(false);
     }
@@ -113,13 +136,18 @@ export default function Dashboard() {
 
   const handleTestConnection = async () => {
     if (!plaidAccessToken) {
-      setFetchError("No Plaid account connected. Please connect your bank account first.");
+      setConnectionStatus({
+        type: 'error',
+        message: 'No bank account connected',
+        details: 'Please connect your bank account first to test the connection.'
+      });
       return;
     }
 
     try {
       setIsFetchingTransactions(true);
       setFetchError(null);
+      setConnectionStatus({ type: null, message: '' });
 
       console.log('Testing Plaid connection...');
       const result = await testPlaidConnection({
@@ -127,11 +155,19 @@ export default function Dashboard() {
       });
 
       console.log('Connection test result:', result);
-      setFetchError(`Connection successful! Found ${result.accountsCount} accounts. Institution: ${result.institutionId}`);
+      setConnectionStatus({
+        type: 'success',
+        message: '✅ Connection Successful!',
+        details: `Found ${result.accountsCount} account${result.accountsCount !== 1 ? 's' : ''} • Institution: ${result.institutionId}`
+      });
     } catch (error) {
       console.error('Connection test failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setFetchError(`Connection test failed: ${errorMessage}`);
+      setConnectionStatus({
+        type: 'error',
+        message: '❌ Connection Failed',
+        details: errorMessage
+      });
     } finally {
       setIsFetchingTransactions(false);
     }
@@ -139,20 +175,29 @@ export default function Dashboard() {
 
   const handleDisconnectAccount = async () => {
     if (!plaidItems || plaidItems.length === 0) {
-      setFetchError("No bank account connected to disconnect.");
+      setConnectionStatus({
+        type: 'error',
+        message: 'No bank account connected',
+        details: 'There is no bank account connected to disconnect.'
+      });
       return;
     }
 
     try {
       setIsFetchingTransactions(true);
       setFetchError(null);
+      setConnectionStatus({ type: null, message: '' });
 
       // Remove the first Plaid item (assuming user has only one)
       const itemId = plaidItems[0].itemId;
       await removePlaidItem({ itemId });
 
       console.log('Successfully disconnected bank account');
-      setFetchError('Bank account disconnected successfully!');
+      setConnectionStatus({
+        type: 'success',
+        message: '✅ Bank Account Disconnected',
+        details: 'Your bank account has been successfully disconnected.'
+      });
       
       // Refresh the page to update the UI
       setTimeout(() => {
@@ -161,7 +206,11 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Failed to disconnect account:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setFetchError(`Failed to disconnect account: ${errorMessage}`);
+      setConnectionStatus({
+        type: 'error',
+        message: '❌ Disconnect Failed',
+        details: `Failed to disconnect account: ${errorMessage}`
+      });
     } finally {
       setIsFetchingTransactions(false);
     }
@@ -169,13 +218,18 @@ export default function Dashboard() {
 
   const handleAddCustomTransactions = async () => {
     if (!user) {
-      setFetchError("User not authenticated.");
+      setConnectionStatus({
+        type: 'error',
+        message: 'Authentication required',
+        details: 'Please log in to add custom transactions.'
+      });
       return;
     }
 
     try {
       setIsFetchingTransactions(true);
       setFetchError(null);
+      setConnectionStatus({ type: null, message: '' });
 
       console.log('Adding custom transactions...');
       console.log('User object:', user);
@@ -185,11 +239,19 @@ export default function Dashboard() {
       });
 
       console.log('Custom transactions added:', result);
-      setFetchError(`Successfully added ${result.transactionsCount} custom transactions!`);
+      setConnectionStatus({
+        type: 'success',
+        message: '🎯 Custom Transactions Added!',
+        details: `Successfully added ${result.transactionsCount} sample transaction${result.transactionsCount !== 1 ? 's' : ''} for testing purposes.`
+      });
     } catch (error) {
       console.error('Failed to add custom transactions:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setFetchError(`Failed to add custom transactions: ${errorMessage}`);
+      setConnectionStatus({
+        type: 'error',
+        message: '❌ Add Failed',
+        details: `Failed to add custom transactions: ${errorMessage}`
+      });
     } finally {
       setIsFetchingTransactions(false);
     }
@@ -206,6 +268,7 @@ export default function Dashboard() {
     try {
       setIsFetchingTransactions(true);
       setFetchError(null);
+      setConnectionStatus({ type: null, message: '' });
 
       await addManualTransaction({
         date: transaction.date,
@@ -216,11 +279,19 @@ export default function Dashboard() {
         transactionType: transaction.transactionType,
       });
 
-      setFetchError("Transaction added successfully!");
+      setConnectionStatus({
+        type: 'success',
+        message: '✅ Transaction Added!',
+        details: `Successfully added ${transaction.description} for ${transaction.transactionType === "debit" ? "-" : "+"}$${transaction.amount.toFixed(2)}`
+      });
     } catch (error) {
       console.error('Failed to add transaction:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setFetchError(`Failed to add transaction: ${errorMessage}`);
+      setConnectionStatus({
+        type: 'error',
+        message: '❌ Add Failed',
+        details: `Failed to add transaction: ${errorMessage}`
+      });
     } finally {
       setIsFetchingTransactions(false);
     }
@@ -328,7 +399,54 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              {fetchError && (
+              {/* Connection Status Display */}
+              {connectionStatus.type && (
+                <div className={`rounded-lg p-4 mb-4 ${
+                  connectionStatus.type === 'success' 
+                    ? 'bg-[#00ff88]/10 border border-[#00ff88]/20' 
+                    : connectionStatus.type === 'error'
+                    ? 'bg-[#ff0080]/10 border border-[#ff0080]/20'
+                    : 'bg-[#0088ff]/10 border border-[#0088ff]/20'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`text-lg ${
+                      connectionStatus.type === 'success' 
+                        ? 'text-[#00ff88]' 
+                        : connectionStatus.type === 'error'
+                        ? 'text-[#ff0080]'
+                        : 'text-[#0088ff]'
+                    }`}>
+                      {connectionStatus.type === 'success' ? '✅' : 
+                       connectionStatus.type === 'error' ? '❌' : 'ℹ️'}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`font-semibold text-sm ${
+                        connectionStatus.type === 'success' 
+                          ? 'text-[#00ff88]' 
+                          : connectionStatus.type === 'error'
+                          ? 'text-[#ff0080]'
+                          : 'text-[#0088ff]'
+                      }`}>
+                        {connectionStatus.message}
+                      </p>
+                      {connectionStatus.details && (
+                        <p className={`text-xs mt-1 ${
+                          connectionStatus.type === 'success' 
+                            ? 'text-[#00cc6a]' 
+                            : connectionStatus.type === 'error'
+                            ? 'text-[#cc0066]'
+                            : 'text-[#0066cc]'
+                        }`}>
+                          {connectionStatus.details}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Legacy Error Display (for backward compatibility) */}
+              {fetchError && !connectionStatus.type && (
                 <div className="bg-[#ff0080]/10 border border-[#ff0080]/20 rounded-lg p-3 mb-4">
                   <p className="text-[#ff0080] text-sm">{fetchError}</p>
                 </div>
@@ -523,7 +641,7 @@ export default function Dashboard() {
               </TabsContent>
             </Tabs>
 
-            {/* Plaid Connection Section */}
+            {/* Bank Account Connection Section - Moved below buttons */}
             {(!plaidItems || plaidItems.length === 0) && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -531,6 +649,12 @@ export default function Dashboard() {
                 transition={{ delay: 0.6 }}
                 className="mt-8"
               >
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold text-[#f5f5f5] mb-2">Connect Your Bank Account</h3>
+                  <p className="text-[#888] text-sm mb-4">
+                    Link your bank account to automatically fetch and analyze your transactions in real time.
+                  </p>
+                </div>
                 <PlaidLink onSuccess={() => {
                   // Refresh the page to update the UI
                   window.location.reload();

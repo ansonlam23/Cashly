@@ -247,18 +247,28 @@ export const getWeeklySpendingTrend = query({
       }
     }
 
-    // Fill in missing weeks with 0
+    // Generate weekly data points
     const result = [];
+    const currentWeekStart = new Date();
+    const dayOfWeek = currentWeekStart.getDay();
+    const diff = currentWeekStart.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    currentWeekStart.setDate(diff);
+    
     for (let i = 0; i < weeks; i++) {
-      const weekStart = new Date(startDate);
-      weekStart.setDate(startDate.getDate() + (i * 7));
+      const weekStart = new Date(currentWeekStart);
+      weekStart.setDate(currentWeekStart.getDate() - (i * 7));
       const weekKey = weekStart.toISOString().split('T')[0];
       const amount = weeklyTotals.get(weekKey) || 0;
       
-      result.push({
+      // Create a more readable label
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      const label = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      
+      result.unshift({
         period: weekKey,
         amount,
-        label: `Week ${i + 1}`
+        label
       });
     }
 

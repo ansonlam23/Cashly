@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Base64 Test</title>
+</head>
+<body>
+    <h1>Base64 Conversion Test</h1>
+    <input type="file" id="fileInput" accept=".pdf">
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            console.log('File info:', {
+                name: file.name,
+                size: file.size,
+                type: file.type
+            });
+
+            try {
+                // Test the FileReader approach
+                const base64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const result = reader.result;
+                        const base64String = result.split(',')[1];
+                        resolve(base64String);
+                    };
+                    reader.onerror = () => reject(new Error('Failed to read file'));
+                    reader.readAsDataURL(file);
+                });
+
+                console.log('Base64 conversion successful:', {
+                    length: base64.length,
+                    preview: base64.substring(0, 100) + '...'
+                });
+
+                document.getElementById('result').innerHTML = `
+                    <h3>Success!</h3>
+                    <p>File: ${file.name}</p>
+                    <p>Size: ${file.size} bytes</p>
+                    <p>Base64 Length: ${base64.length} characters</p>
+                    <p>Preview: ${base64.substring(0, 100)}...</p>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `
+                    <h3>Error!</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

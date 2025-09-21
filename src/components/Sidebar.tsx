@@ -18,13 +18,13 @@ import { motion } from "framer-motion";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Analytics", href: "/analytics", icon: PieChart },
-  { name: "Goals", href: "/goals", icon: Target },
-  { name: "Insights", href: "/insights", icon: Lightbulb },
-  { name: "Investments", href: "/investments", icon: BarChart3 },
   { name: "Transactions", href: "/transactions", icon: Receipt },
-  { name: "Upload", href: "/upload", icon: Upload },
+  { name: "Analytics", href: "/analytics", icon: PieChart },
   { name: "Trends", href: "/trends", icon: TrendingUp },
+  { name: "Goals", href: "/goals", icon: Target },
+  { name: "Investments", href: "/investments", icon: BarChart3 },
+  { name: "Insights", href: "/insights", icon: Lightbulb },
+  { name: "Upload", href: "/upload", icon: Upload },
 ];
 
 export function Sidebar() {

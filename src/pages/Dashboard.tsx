@@ -61,7 +61,6 @@ export default function Dashboard() {
   
   const fetchTransactionsAction = useAction(api.plaidActions.fetchTransactionsAction);
   const testPlaidConnection = useAction(api.plaidActions.testPlaidConnectionAction);
-  const addCustomTransactions = useAction(api.plaidActions.addCustomTransactionsAction);
   const addManualTransaction = useMutation(api.transactions.addManualTransaction);
   const removePlaidItem = useMutation(api.plaidMutations.removePlaidItemFromDb);
   const saveTransactions = useMutation(api.plaidMutations.saveTransactions);
@@ -216,46 +215,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddCustomTransactions = async () => {
-    if (!user) {
-      setConnectionStatus({
-        type: 'error',
-        message: 'Authentication required',
-        details: 'Please log in to add custom transactions.'
-      });
-      return;
-    }
-
-    try {
-      setIsFetchingTransactions(true);
-      setFetchError(null);
-      setConnectionStatus({ type: null, message: '' });
-
-      console.log('Adding custom transactions...');
-      console.log('User object:', user);
-      console.log('User ID:', user._id);
-      const result = await addCustomTransactions({
-        userId: user._id,
-      });
-
-      console.log('Custom transactions added:', result);
-      setConnectionStatus({
-        type: 'success',
-        message: '🎯 Custom Transactions Added!',
-        details: `Successfully added ${result.transactionsCount} sample transaction${result.transactionsCount !== 1 ? 's' : ''} for testing purposes.`
-      });
-    } catch (error) {
-      console.error('Failed to add custom transactions:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setConnectionStatus({
-        type: 'error',
-        message: '❌ Add Failed',
-        details: `Failed to add custom transactions: ${errorMessage}`
-      });
-    } finally {
-      setIsFetchingTransactions(false);
-    }
-  };
 
   const handleAddManualTransaction = async (transaction: {
     description: string;

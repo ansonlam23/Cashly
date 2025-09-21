@@ -123,6 +123,149 @@ export const getIncomeVsSpending = query({
   },
 });
 
+export const getTopMerchants = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.lt(q.field("amount"), 0)) // Only spending transactions
+      .collect();
+
+    const merchantMap = new Map<string, { amount: number; count: number; category: string }>();
+
+    for (const transaction of transactions) {
+      const merchant = transaction.merchant || transaction.description;
+      const amount = Math.abs(transaction.amount);
+      
+      if (merchantMap.has(merchant)) {
+        const existing = merchantMap.get(merchant)!;
+        existing.amount += amount;
+        existing.count += 1;
+      } else {
+        merchantMap.set(merchant, {
+          amount,
+          count: 1,
+          category: transaction.category
+        });
+      }
+    }
+
+    return Array.from(merchantMap.entries())
+      .map(([merchant, data]) => ({
+        merchant,
+        amount: data.amount,
+        transactionCount: data.count,
+        category: data.category
+      }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, args.limit || 10);
+  },
+});
+
+export const getDailySpendingTrend = query({
+  args: { days: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    const days = args.days || 30;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - days);
+
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.lt(q.field("amount"), 0)) // Only spending transactions
+      .collect();
+
+    const dailyTotals = new Map<string, number>();
+    
+    for (const transaction of transactions) {
+      const transactionDate = new Date(transaction.date);
+      if (transactionDate >= startDate && transactionDate <= endDate) {
+        const dayKey = transaction.date;
+        const current = dailyTotals.get(dayKey) || 0;
+        dailyTotals.set(dayKey, current + Math.abs(transaction.amount));
+      }
+    }
+
+    // Fill in missing days with 0
+    const result = [];
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const dayKey = date.toISOString().split('T')[0];
+      const amount = dailyTotals.get(dayKey) || 0;
+      
+      result.push({
+        period: dayKey,
+        amount,
+        label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      });
+    }
+
+    return result;
+  },
+});
+
+export const getWeeklySpendingTrend = query({
+  args: { weeks: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    const weeks = args.weeks || 12;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - (weeks * 7));
+
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.lt(q.field("amount"), 0)) // Only spending transactions
+      .collect();
+
+    const weeklyTotals = new Map<string, number>();
+    
+    for (const transaction of transactions) {
+      const transactionDate = new Date(transaction.date);
+      if (transactionDate >= startDate && transactionDate <= endDate) {
+        // Get the start of the week (Monday)
+        const weekStart = new Date(transactionDate);
+        const dayOfWeek = transactionDate.getDay();
+        const diff = transactionDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        weekStart.setDate(diff);
+        
+        const weekKey = weekStart.toISOString().split('T')[0];
+        const current = weeklyTotals.get(weekKey) || 0;
+        weeklyTotals.set(weekKey, current + Math.abs(transaction.amount));
+      }
+    }
+
+    // Fill in missing weeks with 0
+    const result = [];
+    for (let i = 0; i < weeks; i++) {
+      const weekStart = new Date(startDate);
+      weekStart.setDate(startDate.getDate() + (i * 7));
+      const weekKey = weekStart.toISOString().split('T')[0];
+      const amount = weeklyTotals.get(weekKey) || 0;
+      
+      result.push({
+        period: weekKey,
+        amount,
+        label: `Week ${i + 1}`
+      });
+    }
+
+    return result;
+  },
+});
+
 export const addTransaction = mutation({
   args: {
     statementId: v.id("bankStatements"),

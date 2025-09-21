@@ -31,6 +31,9 @@ import { GoalsOverview } from "@/components/GoalsOverview";
 import { InsightsPanel } from "@/components/InsightsPanel";
 import { PlaidLink } from "@/components/PlaidLink";
 import { AddTransactionForm } from "@/components/AddTransactionForm";
+import { SpendingInsights } from "@/components/SpendingInsights";
+import { TopMerchants } from "@/components/TopMerchants";
+import { SpendingTrendChart } from "@/components/SpendingTrendChart";
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated, user } = useAuth();
@@ -41,6 +44,9 @@ export default function Dashboard() {
   const spendingByCategory = useQuery(api.transactions.getSpendingByCategory);
   const incomeVsSpending = useQuery(api.transactions.getIncomeVsSpending);
   const monthlyTrend = useQuery(api.transactions.getMonthlySpendingTrend, { months: 6 });
+  const topMerchants = useQuery(api.transactions.getTopMerchants, { limit: 5 });
+  const dailyTrend = useQuery(api.transactions.getDailySpendingTrend, { days: 30 });
+  const weeklyTrend = useQuery(api.transactions.getWeeklySpendingTrend, { weeks: 12 });
   const goals = useQuery(api.goals.getActiveGoals);
   const insights = useQuery(api.insights.getUnreadInsights);
   const statements = useQuery(api.bankStatements.getUserStatements);
@@ -459,25 +465,52 @@ export default function Dashboard() {
               </TabsContent>
 
               <TabsContent value="analytics" className="space-y-6">
+                {/* Core Spending Insights */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <SpendingChart data={spendingByCategory || []} />
                   <IncomeVsSpendingChart data={incomeVsSpending || { totalIncome: 0, totalSpending: 0 }} />
                 </div>
-                {monthlyTrend && monthlyTrend.length > 0 && (
-                  <Card className="bg-[#111111] border-[#333]">
-                    <CardHeader>
-                      <CardTitle className="text-[#f5f5f5]">Monthly Spending Trend</CardTitle>
-                      <CardDescription className="text-[#888]">
-                        Your spending patterns over the last 6 months
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[300px] flex items-center justify-center text-[#888]">
-                        Chart visualization would go here
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+
+                {/* Spending Insights and Alerts */}
+                <SpendingInsights 
+                  spendingByCategory={spendingByCategory || []} 
+                  monthlyTrend={monthlyTrend || []} 
+                />
+
+                {/* Top Merchants */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <TopMerchants merchants={topMerchants || []} />
+                  
+                  {/* Monthly Trend Chart */}
+                  {monthlyTrend && monthlyTrend.length > 0 && (
+                    <SpendingTrendChart 
+                      data={monthlyTrend.map(item => ({
+                        period: item.month,
+                        amount: item.amount,
+                        label: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                      }))}
+                      title="Monthly Spending Trend"
+                      description="Your spending patterns over the last 6 months"
+                      type="area"
+                    />
+                  )}
+                </div>
+
+                {/* Daily and Weekly Trends */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <SpendingTrendChart 
+                    data={dailyTrend || []}
+                    title="Daily Spending Trend"
+                    description="Your daily spending over the last 30 days"
+                    type="line"
+                  />
+                  <SpendingTrendChart 
+                    data={weeklyTrend || []}
+                    title="Weekly Spending Trend"
+                    description="Your weekly spending over the last 12 weeks"
+                    type="area"
+                  />
+                </div>
               </TabsContent>
 
               <TabsContent value="goals" className="space-y-6">

@@ -296,39 +296,93 @@ export const fetchCurrentPrice = action({
     const symbol = args.symbol.toUpperCase();
     
     try {
-      // Using Alpha Vantage API for current price
-      const apiKey = process.env.ALPHA_VANTAGE_API_KEY || "4Y9CTEY1GZ8L2Q7R";
-      const response = await fetch(
-        `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`
-      );
+      console.log(`Fetching price for symbol: ${symbol}`);
       
-      const data = await response.json();
-      
-      if (data["Error Message"]) {
-        throw new Error(data["Error Message"]);
+      // Try Alpha Vantage API first
+      try {
+        const apiKey = process.env.ALPHA_VANTAGE_API_KEY || "4Y9CTEY1GZ8L2Q7R";
+        const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`;
+        
+        console.log(`Making Alpha Vantage API request to: ${url.replace(apiKey, 'API_KEY_HIDDEN')}`);
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log(`Alpha Vantage API response for ${symbol}:`, data);
+        
+        if (data["Error Message"]) {
+          console.error(`Alpha Vantage API Error for ${symbol}:`, data["Error Message"]);
+          throw new Error(data["Error Message"]);
+        }
+        
+        if (data["Note"]) {
+          console.warn(`Alpha Vantage API rate limit exceeded for ${symbol}. Response:`, data["Note"]);
+          throw new Error("API rate limit exceeded. Please try again later.");
+        }
+        
+        const quote = data["Global Quote"];
+        console.log(`Quote data for ${symbol}:`, quote);
+        
+        if (!quote || !quote["01. symbol"]) {
+          console.error(`No quote data for ${symbol}. Full response:`, data);
+          console.error(`Available keys in response:`, Object.keys(data));
+          throw new Error("No data available for this symbol");
+        }
+        
+        const currentPrice = parseFloat(quote["05. price"]);
+        const dayChange = parseFloat(quote["09. change"]);
+        const dayChangePercent = parseFloat(quote["10. change percent"].replace("%", ""));
+        
+        console.log(`Successfully fetched price for ${symbol} via Alpha Vantage: $${currentPrice}`);
+        
+        return {
+          symbol,
+          currentPrice,
+          dayChange,
+          dayChangePercent
+        };
+      } catch (alphaVantageError) {
+        console.warn(`Alpha Vantage API failed for ${symbol}, trying fallback:`, alphaVantageError);
+        
+        // Fallback to Yahoo Finance API (unofficial but more reliable)
+        const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
+        console.log(`Trying Yahoo Finance API: ${yahooUrl}`);
+        
+        const yahooResponse = await fetch(yahooUrl);
+        
+        if (!yahooResponse.ok) {
+          throw new Error(`Yahoo Finance HTTP error! status: ${yahooResponse.status}`);
+        }
+        
+        const yahooData = await yahooResponse.json();
+        console.log(`Yahoo Finance API response for ${symbol}:`, yahooData);
+        
+        if (!yahooData.chart || !yahooData.chart.result || yahooData.chart.result.length === 0) {
+          throw new Error("No data available from Yahoo Finance");
+        }
+        
+        const result = yahooData.chart.result[0];
+        const meta = result.meta;
+        const currentPrice = meta.regularMarketPrice;
+        const previousClose = meta.previousClose;
+        const dayChange = currentPrice - previousClose;
+        const dayChangePercent = (dayChange / previousClose) * 100;
+        
+        console.log(`Successfully fetched price for ${symbol} via Yahoo Finance: $${currentPrice}`);
+        
+        return {
+          symbol,
+          currentPrice,
+          dayChange,
+          dayChangePercent
+        };
       }
-      
-      if (data["Note"]) {
-        throw new Error("API rate limit exceeded. Please try again later.");
-      }
-      
-      const quote = data["Global Quote"];
-      if (!quote || !quote["01. symbol"]) {
-        throw new Error("No data available for this symbol");
-      }
-      
-      const currentPrice = parseFloat(quote["05. price"]);
-      const dayChange = parseFloat(quote["09. change"]);
-      const dayChangePercent = parseFloat(quote["10. change percent"].replace("%", ""));
-      
-      return {
-        symbol,
-        currentPrice,
-        dayChange,
-        dayChangePercent
-      };
     } catch (error) {
-      console.error("Error fetching current price:", error);
+      console.error(`Error fetching current price for ${symbol}:`, error);
       throw new Error(`Failed to fetch price for ${symbol}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
@@ -338,10 +392,20 @@ export const fetchCurrentPrice = action({
 export const updateAllInvestmentPrices = action({
   args: { userId: v.id("users") },
   handler: async (ctx, args): Promise<Array<{ symbol: string; success: boolean; error?: string }>> => {
+    console.log(`Starting price update for user: ${args.userId}`);
+    
     const investments = await ctx.runQuery(api.investments.getUserInvestments, {});
+    console.log(`Found ${investments.length} investments to update`);
+    
+    if (investments.length === 0) {
+      console.log("No investments found to update");
+      return [];
+    }
     
     const results: Array<{ symbol: string; success: boolean; error?: string }> = [];
+    
     for (const investment of investments) {
+      console.log(`Updating price for ${investment.symbol}...`);
       try {
         const priceData = await ctx.runAction(api.investments.fetchCurrentPrice, {
           symbol: investment.symbol
@@ -354,12 +418,21 @@ export const updateAllInvestmentPrices = action({
           dayChangePercent: priceData.dayChangePercent,
         });
         
+        console.log(`Successfully updated ${investment.symbol}`);
         results.push({ symbol: investment.symbol, success: true });
       } catch (error) {
         console.error(`Failed to update ${investment.symbol}:`, error);
-        results.push({ symbol: investment.symbol, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+        results.push({ 
+          symbol: investment.symbol, 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        });
       }
     }
+    
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.filter(r => !r.success).length;
+    console.log(`Price update completed: ${successCount} successful, ${failureCount} failed`);
     
     return results;
   },

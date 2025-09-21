@@ -580,3 +580,30 @@ export const deleteTransaction = mutation({
     await ctx.db.delete(args.id);
   },
 });
+
+export const clearAllTransactions = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    // Get all transactions for the user
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Delete all transactions
+    const deletePromises = transactions.map(transaction => 
+      ctx.db.delete(transaction._id)
+    );
+
+    await Promise.all(deletePromises);
+
+    return { 
+      success: true, 
+      deletedCount: transactions.length,
+      message: `Successfully deleted ${transactions.length} transactions`
+    };
+  },
+});

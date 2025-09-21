@@ -34,6 +34,7 @@ export default function Investments() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteInvestmentId, setDeleteInvestmentId] = useState<string | null>(null);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
   const [newInvestment, setNewInvestment] = useState({
     symbol: "",
     shares: "",
@@ -78,10 +79,31 @@ export default function Investments() {
   const handleRefreshPrices = async () => {
     if (!user) return;
     setIsRefreshing(true);
+    setRefreshMessage("Refreshing prices...");
+    
     try {
-      await updateAllPrices({ userId: user._id });
+      console.log("Starting price refresh for user:", user._id);
+      const results = await updateAllPrices({ userId: user._id });
+      console.log("Price refresh results:", results);
+      
+      // Check if any updates failed
+      const failedUpdates = results.filter(result => !result.success);
+      const successCount = results.filter(result => result.success).length;
+      
+      if (failedUpdates.length > 0) {
+        console.warn("Some price updates failed:", failedUpdates);
+        console.error("Detailed error information:", failedUpdates.map(f => ({ symbol: f.symbol, error: f.error })));
+        setRefreshMessage(`Updated ${successCount} prices, ${failedUpdates.length} failed. Check console for details.`);
+      } else {
+        setRefreshMessage(`Successfully updated ${successCount} prices`);
+      }
+      
+      // Clear message after 3 seconds
+      setTimeout(() => setRefreshMessage(null), 3000);
     } catch (error) {
       console.error("Failed to refresh prices:", error);
+      setRefreshMessage("Failed to refresh prices. Check console for details.");
+      setTimeout(() => setRefreshMessage(null), 5000);
     } finally {
       setIsRefreshing(false);
     }
@@ -145,6 +167,7 @@ export default function Investments() {
                     )}
                     Refresh Prices
                   </Button>
+                  
                   <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                     <DialogTrigger asChild>
                       <Button className="bg-[#00ff88] text-black hover:bg-[#00ff88]/90">
@@ -215,6 +238,24 @@ export default function Investments() {
                   </Dialog>
                 </div>
               </div>
+              
+              {/* Refresh Message */}
+              {refreshMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className={`p-3 rounded-lg text-sm ${
+                    refreshMessage.includes("Successfully") || refreshMessage.includes("Updated")
+                      ? "bg-green-900/20 border border-green-500/30 text-green-400"
+                      : refreshMessage.includes("Failed")
+                      ? "bg-red-900/20 border border-red-500/30 text-red-400"
+                      : "bg-blue-900/20 border border-blue-500/30 text-blue-400"
+                  }`}
+                >
+                  {refreshMessage}
+                </motion.div>
+              )}
             </motion.div>
 
             {/* Portfolio Summary */}

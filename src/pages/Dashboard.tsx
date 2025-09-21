@@ -35,6 +35,7 @@ import { AddTransactionForm } from "@/components/AddTransactionForm";
 import { SpendingInsights } from "@/components/SpendingInsights";
 import { TopMerchants } from "@/components/TopMerchants";
 import { SpendingTrendChart } from "@/components/SpendingTrendChart";
+import { ClearTransactions } from "@/components/ClearTransactions";
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated, user } = useAuth();
@@ -526,6 +527,12 @@ export default function Dashboard() {
                 >
                   Insights
                 </TabsTrigger>
+                <TabsTrigger 
+                  value="settings" 
+                  className="data-[state=active]:bg-[#ff6b35] data-[state=active]:text-[#0a0a0a]"
+                >
+                  Settings
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
@@ -597,6 +604,15 @@ export default function Dashboard() {
 
               <TabsContent value="insights" className="space-y-6">
                 <InsightsPanel insights={insights || []} />
+              </TabsContent>
+
+              <TabsContent value="settings" className="space-y-6">
+                <div className="max-w-2xl mx-auto">
+                  <h2 className="text-2xl font-bold text-[#f5f5f5] mb-6">Account Settings</h2>
+                  <div className="space-y-6">
+                    <ClearTransactions />
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
 

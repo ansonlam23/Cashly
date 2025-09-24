@@ -1,4 +1,5 @@
 # 💸 Cashly
+DEMO Video: https://www.youtube.com/watch?v=rOvPsbZH5vs&t=15s
 
 ## 🌟 Inspiration
 Have you ever tried to manage your money as a student but felt completely overwhelmed? Tracking spending, setting goals, and planning investments feels complicated, and most finance apps are either dry, robotic, or demand manual entry.  
